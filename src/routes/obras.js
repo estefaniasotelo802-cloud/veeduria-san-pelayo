@@ -3,6 +3,21 @@ import { pool } from '../db.js';
 
 const router = express.Router();
 
+// ROUTE: LOGIN (Autenticación de administrador)
+router.post('/login', (req, res) => {
+  const { usuario, password } = req.body;
+
+  // Credenciales de acceso administrativo (puedes cambiarlas por las que desees)
+  const USUARIO_ADMIN = "admin";
+  const PASSWORD_ADMIN = "12345";
+
+  if (usuario === USUARIO_ADMIN && password === PASSWORD_ADMIN) {
+      res.status(200).json({ exito: true, mensaje: "Autenticación exitosa" });
+  } else {
+      res.status(401).json({ exito: false, mensaje: "Usuario o contraseña incorrectos" });
+  }
+});
+
 // READ (Consultar todas las obras)
 router.get('/', async (req, res) => {
   try {
@@ -88,12 +103,12 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE (Eliminar una obra existente)[cite: 7]
+// DELETE (Eliminar una obra existente)
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    // 1. Verificar si la obra existe antes de eliminarla[cite: 7]
+    // 1. Verificar si la obra existe antes de eliminarla
     const [filas] = await pool.execute(
       'SELECT * FROM obras WHERE id = ?',
       [id]
@@ -105,13 +120,13 @@ router.delete('/:id', async (req, res) => {
       });
     }
 
-    // 2. Ejecutar la eliminación en MySQL[cite: 7]
+    // 2. Ejecutar la eliminación en MySQL
     await pool.execute(
       'DELETE FROM obras WHERE id = ?',
       [id]
     );
 
-    // 3. Responder con éxito devolviendo la obra que fue eliminada[cite: 7]
+    // 3. Responder con éxito devolviendo la obra que fue eliminada
     res.json({
       mensaje: 'Obra eliminada correctamente',
       obra: filas[0]

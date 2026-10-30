@@ -1,3 +1,8 @@
+// Validar que el administrador haya iniciado sesión antes de mostrar cualquier cosa
+if (localStorage.getItem('autenticado') !== 'true') {
+    window.location.href = '/login.html';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const formObra = document.getElementById('formObra');
     const tablaAdminBody = document.getElementById('tablaAdminBody');
