@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Administrativo - Veeduría Ciudadana</title>
+    <!-- Vinculamos el archivo CSS externo -->
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+    <header>
+        <h1>Panel de Gestión Administrativa</h1>
+        <p>Veeduría Ciudadana - Municipio de San Pelayo</p>
+    </header>
+
+    <div class="container">
+        <a href="/" class="back-link">← Volver al Portal Público</a>
+        
+        <h2>Registrar Nueva Obra</h2>
+        <form id="formObra">
+            <div class="form-group full">
+                <label for="nombre">Nombre de la Obra:</label>
+                <input type="text" id="nombre" required placeholder="Ej. Pavimentación vía principal...">
+            </div>
+            
+            <div class="form-group">
+                <label for="sector">Sector / Vereda:</label>
+                <input type="text" id="sector" required placeholder="Ej. Pelayito / Carrillo">
+            </div>
+
+            <div class="form-group">
+                <label for="presupuesto">Presupuesto ($):</label>
+                <input type="text" id="presupuesto" required placeholder="Ej. 1000000000">
+            </div>
+
+            <div class="form-group">
+                <label for="estado">Estado:</label>
+                <select id="estado" required>
+                    <option value="En ejecución">En ejecución</option>
+                    <option value="En pruebas técnicas">En pruebas técnicas</option>
+                    <option value="Mitigación finalizada">Mitigación finalizada</option>
+                    <option value="Planeación">Planeación</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="avance_porcentaje">Porcentaje de Avance (%):</label>
+                <input type="number" id="avance_porcentaje" min="0" max="100" required placeholder="Ej. 50">
+            </div>
+
+            <button type="submit">Guardar Nueva Obra</button>
+        </form>
+
+        <hr style="margin: 40px 0; border: 0; border-top: 1px solid #cbd5e0;">
+
+        <h2>Obras Registradas (Gestión)</h2>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                <thead>
+                    <tr style="background-color: #1b4d3e; color: white; text-align: left;">
+                        <th style="padding: 10px;">ID</th>
+                        <th style="padding: 10px;">Nombre</th>
+                        <th style="padding: 10px;">Sector</th>
+                        <th style="padding: 10px;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaAdminBody">
+                    <!-- Las obras se cargarán aquí automáticamente -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Vinculamos el archivo JavaScript externo -->
+    <script src="admin.js"></script>
+</body>
+</html>

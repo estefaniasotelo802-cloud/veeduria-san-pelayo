@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Veeduría Ciudadana - San Pelayo</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Aquí puedes agregar después los estilos de Leaflet para el mapa si usas esa librería -->
+</head>
+<body>
+    <header class="header-publico">
+        <div class="logo-titulo">
+            <h1>Veeduría Ciudadana</h1>
+            <p>Municipio de San Pelayo, Córdoba</p>
+        </div>
+        <nav>
+            <!-- Botón discreto para ir al login de administradores -->
+            <a href="login.html" class="btn-admin-link">Acceso Administrativo</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="intro-seccion">
+            <h2>Transparencia en Obras Públicas</h2>
+            <p>Consulta en tiempo real el estado, presupuesto y avance de los proyectos ejecutados en nuestra región.</p>
+        </section>
+
+        <!-- Sección de la Tabla de Obras (Solo Lectura) -->
+        <section class="tabla-seccion">
+            <h3>Obras Registradas</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre de la Obra</th>
+                            <th>Sector / Vereda</th>
+                            <th>Presupuesto</th>
+                            <th>Estado</th>
+                            <th>Avance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaObrasBody">
+                        <!-- Los datos se llenarán automáticamente desde JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Espacio reservado para el Mapa de San Pelayo -->
+        <section class="mapa-seccion">
+            <h3>Ubicación Geográfica de las Obras</h3>
+            <div id="map" style="width: 100%; height: 400px; background-color: #e0e0e0; border-radius: 8px;">
+                <!-- Aquí se cargará el mapa interactivo -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 Veeduría Ciudadana - San Pelayo. Construyendo transparencia.</p>
+    </footer>
+
+    <!-- Script principal del frontend -->
+    <script src="app.js"></script>
+</body>
+</html>
