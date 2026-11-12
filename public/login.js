@@ -1,7 +1,8 @@
 document.getElementById('formLogin').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const usuario = document.getElementById('usuario').value;
+    // Usuario = 'cedula'
+    const cedula = document.getElementById('cedula').value;
     const password = document.getElementById('password').value;
     const mensajeError = document.getElementById('mensajeError');
 
@@ -11,7 +12,8 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ usuario, password })
+            // Enviamos 'cedula' en el cuerpo JSON de la petición
+            body: JSON.stringify({ cedula, password })
         });
 
         const resultado = await respuesta.json();
@@ -19,6 +21,9 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
         if (respuesta.ok) {
             // Guardamos un "pase" en el navegador indicando que ya inició sesión
             localStorage.setItem('autenticado', 'true');
+            
+            localStorage.setItem('rol', resultado.rol);
+
             // Redirigimos al panel de administración
             window.location.href = '/admin.html';
         } else {

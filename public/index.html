@@ -1,66 +1,214 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Veeduría Ciudadana - San Pelayo</title>
-    <link rel="stylesheet" href="styles.css">
-    <!-- Aquí puedes agregar después los estilos de Leaflet para el mapa si usas esa librería -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veeduría Ciudadana - San Pelayo</title>
+  
+  <!-- Estilos de Leaflet para el Mapa -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <!-- Hoja de estilos principal -->
+  <link rel="stylesheet" href="/style.css">
+
+  <link rel="icon" type="image/jpeg" href="/favicon.jpg">
 </head>
 <body>
-    <header class="header-publico">
-        <div class="logo-titulo">
-            <h1>Veeduría Ciudadana</h1>
-            <p>Municipio de San Pelayo, Córdoba</p>
+
+  <!-- Barra Superior de Información -->
+  <div class="top-bar">
+    <span>Red de Veedurías Ciudadanas de Colombia | Municipio de San Pelayo, Córdoba</span>
+  </div>
+
+  <!-- Navegación Principal -->
+  <nav class="navbar">
+    <div class="logo">
+      <h2>Veeduría<span>San Pelayo</span></h2>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#inicio">INICIO</a></li>
+      <li><a href="#objetivo">NUESTRO OBJETIVO</a></li>
+      <li><a href="#historia">HISTORIA DE SAN PELAYO</a></li>
+      <li><a href="#comentarios">COMENTARIOS</a></li>
+      <li><a href="#veeduria" class="nav-btn-highlight">VEEDURÍA CIUDADANA</a></li>
+    </ul>
+  </nav>
+
+  <!-- Banner Principal (Hero con Foto del Puente) -->
+  <section id="inicio" class="hero">
+    <div class="hero-overlay">
+      <div class="hero-content">
+        <p class="subtitle">Transparencia y Participación en Córdoba</p>
+        <h1>Veeduría Ciudadana <br><span>de San Pelayo</span></h1>
+        <div class="hero-buttons">
+          <a href="#objetivo" class="btn btn-primary">Nuestro Objetivo</a>
+          <a href="#historia" class="btn btn-outline">Conoce San Pelayo</a>
         </div>
-        <nav>
-            <!-- Botón discreto para ir al login de administradores -->
-            <a href="login.html" class="btn-admin-link">Acceso Administrativo</a>
-        </nav>
-    </header>
+      </div>
+    </div>
+  </section>
 
-    <main class="container">
-        <section class="intro-seccion">
-            <h2>Transparencia en Obras Públicas</h2>
-            <p>Consulta en tiempo real el estado, presupuesto y avance de los proyectos ejecutados en nuestra región.</p>
-        </section>
+  <!-- Sección: Nuestro Objetivo -->
+  <section id="objetivo" class="section-container">
+    <h2>Nuestro Objetivo</h2>
+    <p class="section-lead">
+      Fomentar el control social y la vigilancia transparente de los recursos públicos y proyectos de infraestructura en el municipio de San Pelayo, garantizando el bienestar comunitario y el crecimiento de la región.
+    </p>
+    <div class="cards-grid">
+      <div class="card">
+        <h3>Vigilancia Comunitaria</h3>
+        <p>Monitoreo activo del avance y presupuesto de las obras públicas locales.</p>
+      </div>
+      <div class="card">
+        <h3>Participación Ciudadana</h3>
+        <p>Espacio abierto para que la comunidad registre reportes e inquietudes.</p>
+      </div>
+      <div class="card">
+        <h3>Transparencia</h3>
+        <p>Acceso claro a la información y seguimiento de solicitudes en tiempo real.</p>
+      </div>
+    </div>
+  </section>
 
-        <!-- Sección de la Tabla de Obras (Solo Lectura) -->
-        <section class="tabla-seccion">
-            <h3>Obras Registradas</h3>
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nombre de la Obra</th>
-                            <th>Sector / Vereda</th>
-                            <th>Presupuesto</th>
-                            <th>Estado</th>
-                            <th>Avance</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaObrasBody">
-                        <!-- Los datos se llenarán automáticamente desde JavaScript -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
+  <!-- Sección: Historia de San Pelayo -->
+  <section id="historia" class="section-container bg-light">
+    <h2>San Pelayo: Cuna del Porro y Tradición</h2>
+    <div class="history-content">
+      <p>
+        Ubicado a orillas del majestuoso río Sinú, el municipio de San Pelayo es referente cultural de Colombia, reconocido mundialmente por ser la sede del <strong>Festival Nacional del Porro</strong>. Fundado en la riqueza agrícola y ganadera de sus tierras, San Pelayo destaca por su gente trabajadora, sus bandas tradicionales y su infraestructura icónica como el histórico <strong>puente metálico sobre el río Sinú</strong>.
+      </p>
+    </div>
+  </section>
 
-        <!-- Espacio reservado para el Mapa de San Pelayo -->
-        <section class="mapa-seccion">
-            <h3>Ubicación Geográfica de las Obras</h3>
-            <div id="map" style="width: 100%; height: 400px; background-color: #e0e0e0; border-radius: 8px;">
-                <!-- Aquí se cargará el mapa interactivo -->
-            </div>
-        </section>
-    </main>
+  <section id="comentarios" class="section-container seccion-comentarios" style="margin-top: 20px; margin-bottom: 40px; padding: 25px; background: #f8f9fa; border-radius: 8px;">
+    <h3>Buzón de Comentarios Ciudadanos</h3>
+    
+    <!-- Formulario -->
+    <form id="formComentario" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+      <input type="text" id="nombreUsuario" placeholder="Tu nombre o anónimo" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+      <textarea id="textoComentario" placeholder="Escribe tu comentario o veeduría aquí..." rows="3" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;"></textarea>
+      <button type="submit" style="padding: 12px; background: linear-gradient(135deg, #0b6623, #0284c7); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Publicar Comentario</button>
+    </form>
 
-    <!-- Footer -->
-    <footer>
-        <p>&copy; 2026 Veeduría Ciudadana - San Pelayo. Construyendo transparencia.</p>
-    </footer>
+    <!-- Lista donde se cargarán los comentarios -->
+    <div id="listaComentarios" style="display: flex; flex-direction: column; gap: 10px;"></div>
+  </section>
 
-    <!-- Script principal del frontend -->
-    <script src="app.js"></script>
+  <!-- Sección: Veeduría Ciudadana (Tabla y Mapa Interactivo) -->
+  <section id="veeduria" class="section-container">
+    <h2>Sección de Veeduría Ciudadana</h2>
+    <p class="section-lead">Consulta en tiempo real el estado de los proyectos, sus fechas y su ubicación en el mapa interactivo de San Pelayo.</p>
+    
+    <!-- Contenedor con diseño de tarjeta elegante para evitar el aspecto plano/enredado -->
+    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 30px;">
+      <div class="table-responsive" style="overflow-x: auto;">
+        <table class="tabla-obras" style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead>
+            <tr style="background-color: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #334155; font-size: 0.9rem;">
+              <th style="padding: 12px 15px;">Nombre del Proyecto</th>
+              <th style="padding: 12px 15px;">Sector</th>
+              <th style="padding: 12px 15px;">Presupuesto</th>
+              <th style="padding: 12px 15px;">Estado</th>
+              <th style="padding: 12px 15px;">Avance</th>
+              <th style="padding: 12px 15px;">Fecha Inicio</th>
+              <th style="padding: 12px 15px;">Fecha Final</th>
+            </tr>
+          </thead>
+          <tbody id="tablaObrasBody" style="font-size: 0.9rem; color: #475569;">
+            <!-- Los datos se cargan dinámicamente desde app.js -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Contenedor del Mapa -->
+    <div id="map" style="height: 450px; border-radius: 8px; border: 1px solid #e2e8f0;"></div>
+  </section>
+
+    <!-- Contenedor del Mapa -->
+    <div id="map" style="margin-top: 30px; height: 450px; border-radius: 8px;"></div>
+  </section>
+
+  <!-- Widget Flotante del Chatbot -->
+  <div id="chatbot-container" class="chatbot-container">
+    <button id="chat-toggle-btn" class="chatbot-toggle-btn" title="Asistente Virtual" style="background: none; border: none; cursor: pointer; padding: 0;">
+  <img src="/widget.jpg" alt="Asistente" style="width: 55px; height: 55px; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+</button>
+    <div id="chat-box" class="chatbot-box">
+      <div class="chatbot-header">
+        <span>Asistente Veeduría Pelayo</span>
+        <button id="chat-close-btn">&times;</button>
+      </div>
+      <div id="chat-messages" class="chatbot-messages">
+        <div class="message bot-message" style="background: #ffffff; color: #334155; padding: 10px 14px; border-radius: 12px; border-bottom-left-radius: 4px; box-shadow: 0px 2px 5px rgba(0,0,0,0.03); border: 1px solid #f1f5f9;">
+          ¡Hola! Soy el asistente de la Veeduría de San Pelayo. ¿En qué te puedo ayudar sobre los proyectos y obras de nuestro municipio?
+        </div>
+      </div>
+      <div class="chatbot-input-container">
+        <input type="text" id="chat-input" placeholder="Escribe tu consulta aquí..." />
+        <button id="chat-send-btn">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pie de Página (Ubicado al final de toda la página) -->
+  <footer>
+    <p>&copy; 2026 Veeduría Ciudadana de San Pelayo. Todos los derechos reservados.</p>
+  </footer>
+
+  <!-- Scripts de Leaflet y Aplicación Principal -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/app.js"></script>
+
+  <script>
+    const formComentario = document.getElementById('formComentario');
+    const listaComentarios = document.getElementById('listaComentarios');
+
+    async function cargarComentarios() {
+      try {
+        const respuesta = await fetch('/obras/comentarios');
+        const comentarios = await respuesta.json();
+        
+        listaComentarios.innerHTML = '';
+        comentarios.forEach(c => {
+          const div = document.createElement('div');
+          div.style.background = 'white';
+          div.style.padding = '12px';
+          div.style.borderRadius = '6px';
+          div.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+          div.innerHTML = `<strong>${c.nombre}</strong> <span style="font-size: 12px; color: #666; float: right;">${new Date(c.fecha).toLocaleDateString()}</span><p style="margin: 5px 0 0 0;">${c.comentario}</p>`;
+          listaComentarios.appendChild(div);
+        });
+      } catch (error) {
+        console.error('Error cargando comentarios:', error);
+      }
+    }
+
+    formComentario.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nombre = document.getElementById('nombreUsuario').value;
+      const comentario = document.getElementById('textoComentario').value;
+
+      try {
+        const respuesta = await fetch('/obras/comentarios', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, comentario })
+        });
+
+        if (respuesta.ok) {
+          formComentario.reset();
+          cargarComentarios();
+        } else {
+          alert('Hubo un error al publicar el comentario.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    });
+
+    cargarComentarios();
+  </script>
+
 </body>
 </html>

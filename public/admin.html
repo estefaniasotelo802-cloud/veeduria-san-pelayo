@@ -4,75 +4,125 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Administrativo - Veeduría Ciudadana</title>
-    <!-- Vinculamos el archivo CSS externo -->
-    <link rel="stylesheet" href="admin.css">
+    <!-- Archivo CSS externo -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/jpeg" href="/favicon.jpg">
 </head>
-<body>
+<body class="admin-body">
 
-    <header>
-        <h1>Panel de Gestión Administrativa</h1>
-        <p>Veeduría Ciudadana - Municipio de San Pelayo</p>
+    <header class="admin-header">
+        <div class="admin-header-container">
+            <div class="admin-header-title">
+                <img src="/favicon.jpg" alt="Escudo San Pelayo">
+                <div>
+                    <h1>Panel de Gestión Administrativa</h1>
+                    <p>Veeduría Ciudadana - Municipio de San Pelayo</p>
+                </div>
+            </div>
+            <a href="/" class="btn-logout">Cerrar Sesión</a>
+        </div>
     </header>
 
-    <div class="container">
+    <main class="admin-main">
         <a href="/" class="back-link">← Volver al Portal Público</a>
-        
-        <h2>Registrar Nueva Obra</h2>
-        <form id="formObra">
-            <div class="form-group full">
-                <label for="nombre">Nombre de la Obra:</label>
-                <input type="text" id="nombre" required placeholder="Ej. Pavimentación vía principal...">
-            </div>
-            
-            <div class="form-group">
-                <label for="sector">Sector / Vereda:</label>
-                <input type="text" id="sector" required placeholder="Ej. Pelayito / Carrillo">
-            </div>
 
-            <div class="form-group">
-                <label for="presupuesto">Presupuesto ($):</label>
-                <input type="text" id="presupuesto" required placeholder="Ej. 1000000000">
-            </div>
+        <div class="admin-card">
+            <h2 id="formTitle">Registrar Nueva Obra</h2>
+            <form id="formObra">
+                <!-- Campo oculto para saber si estamos editando una obra existente -->
+                <input type="hidden" id="obraId">
 
-            <div class="form-group">
-                <label for="estado">Estado:</label>
-                <select id="estado" required>
-                    <option value="En ejecución">En ejecución</option>
-                    <option value="En pruebas técnicas">En pruebas técnicas</option>
-                    <option value="Mitigación finalizada">Mitigación finalizada</option>
-                    <option value="Planeación">Planeación</option>
-                </select>
-            </div>
+                <div class="form-group-admin">
+                    <label for="nombre">Nombre de la Obra:</label>
+                    <input type="text" id="nombre" required placeholder="Ej. Pavimentación vía principal...">
+                </div>
+                
+                <div class="form-group-admin">
+                    <label for="sector">Sector / Vereda:</label>
+                    <input type="text" id="sector" required placeholder="Ej. Pelayito / Carrillo">
+                </div>
 
-            <div class="form-group">
-                <label for="avance_porcentaje">Porcentaje de Avance (%):</label>
-                <input type="number" id="avance_porcentaje" min="0" max="100" required placeholder="Ej. 50">
-            </div>
+                <div class="form-group-admin">
+                    <label for="presupuesto">Presupuesto ($):</label>
+                    <input type="text" id="presupuesto" required placeholder="Ej. 1000000000">
+                </div>
 
-            <button type="submit">Guardar Nueva Obra</button>
-        </form>
+                <div class="form-group-admin">
+                    <label for="estado">Estado:</label>
+                    <select id="estado" required>
+                        <option value="En ejecución">En ejecución</option>
+                        <option value="En pruebas técnicas">En pruebas técnicas</option>
+                        <option value="Mitigación finalizada">Mitigación finalizada</option>
+                        <option value="Planeación">Planeación</option>
+                    </select>
+                </div>
 
-        <hr style="margin: 40px 0; border: 0; border-top: 1px solid #cbd5e0;">
+                <div class="form-group-admin">
+                    <label for="avance_porcentaje">Porcentaje de Avance (%):</label>
+                    <input type="number" id="avance_porcentaje" min="0" max="100" required placeholder="Ej. 50">
+                </div>
+                <!-- Nuevos campos de Fecha de Inicio y Fecha Final -->
+                <div class="form-group-admin">
+                    <label for="fecha_inicio">Fecha de Inicio:</label>
+                    <input type="date" id="fecha_inicio" required>
+                </div>
 
-        <h2>Obras Registradas (Gestión)</h2>
-        <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-                <thead>
-                    <tr style="background-color: #1b4d3e; color: white; text-align: left;">
-                        <th style="padding: 10px;">ID</th>
-                        <th style="padding: 10px;">Nombre</th>
-                        <th style="padding: 10px;">Sector</th>
-                        <th style="padding: 10px;">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaAdminBody">
-                    <!-- Las obras se cargarán aquí automáticamente -->
-                </tbody>
-            </table>
+                <div class="form-group-admin">
+                    <label for="fecha_fin">Fecha Final (Estimada):</label>
+                    <input type="date" id="fecha_fin" required>
+                </div>
+
+                <button type="submit" id="btnSubmitForm" class="btn-submit">Guardar Nueva Obra</button>
+            </form>
         </div>
-    </div>
 
-    <!-- Vinculamos el archivo JavaScript externo -->
-    <script src="admin.js"></script>
+        <div class="admin-card" style="max-width: 900px;">
+            <h2>Obras Registradas (Gestión)</h2>
+            <div style="overflow-x: auto;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Sector</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaAdminBody">
+                        <!-- Se llena dinámicamente desde admin.js -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Sección de Moderación de Comentarios -->
+        <div class="admin-card" style="max-width: 900px; margin-top: 30px;">
+            <h2>Moderación de Comentarios Ciudadanos</h2>
+            <div style="overflow-x: auto;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Ciudadano</th>
+                            <th>Comentario</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaComentariosAdmin">
+                        <!-- Se llena dinámicamente desde admin.js -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Pie de página con la línea de copyright abajo del todo -->
+     <footer>
+    <p>&copy; 2026 Veeduría Ciudadana de San Pelayo. Todos los derechos reservados.</p>
+  </footer>
+
+    <!-- Archivo JavaScript externo -->
+  <script src="admin.js?v=2"></script>
 </body>
 </html>
