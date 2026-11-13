@@ -1,7 +1,6 @@
 document.getElementById('formLogin').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    // Usuario = 'cedula'
     const cedula = document.getElementById('cedula').value;
     const password = document.getElementById('password').value;
     const mensajeError = document.getElementById('mensajeError');
@@ -12,20 +11,22 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
             headers: {
                 'Content-Type': 'application/json'
             },
-            // Enviamos 'cedula' en el cuerpo JSON de la petición
             body: JSON.stringify({ cedula, password })
         });
 
         const resultado = await respuesta.json();
 
         if (respuesta.ok) {
-            // Guardamos un "pase" en el navegador indicando que ya inició sesión
+            // Guardamos el pase de autenticación
             localStorage.setItem('autenticado', 'true');
             
-            localStorage.setItem('rol', resultado.rol);
+            // Corregido: el rol viene dentro del objeto 'usuario'
+            if (resultado.usuario && resultado.usuario.rol !== undefined) {
+                localStorage.setItem('rol', resultado.usuario.rol);
+            }
 
-            // Redirigimos al panel de administración
-            window.location.href = '/admin.html';
+            // Redirigimos correctamente a la ruta del panel de administración en el router de obras
+            window.location.href = '/obras/admin';
         } else {
             mensajeError.textContent = resultado.mensaje || 'Credenciales incorrectas';
         }
