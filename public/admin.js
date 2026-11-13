@@ -1,6 +1,6 @@
 // Validar que el administrador haya iniciado sesión antes de mostrar cualquier cosa
 if (localStorage.getItem('autenticado') !== 'true') {
-    window.location.href = '/login.html';
+    window.location.href = '/obras/login';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
