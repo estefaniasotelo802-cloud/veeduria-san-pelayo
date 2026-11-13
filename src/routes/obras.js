@@ -1,6 +1,11 @@
 import express from 'express';
 import { pool } from '../db.js';
 import bcrypt from 'bcrypt';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
@@ -36,7 +41,15 @@ const administradoresAutorizados = [
   }
 })();
 
-// 2. ENDPOINT DE AUTENTICACIÓN (LOGIN)
+// 2. ENDPOINTS DE AUTENTICACIÓN (LOGIN)
+
+// NUEVO: Ruta GET para mostrar la vista/página de login en el navegador
+router.get('/login', (req, res) => {
+  // Ajusta la ruta '../public/login.html' según dónde tengas guardado tu archivo HTML de login
+  res.sendFile(path.join(__dirname, '../public/login.html'));
+});
+
+// Ruta POST para procesar el inicio de sesión
 router.post('/login', async (req, res) => {
   const { cedula, password } = req.body;
 
@@ -175,6 +188,7 @@ router.post('/comentarios', async (req, res) => {
         res.status(500).json({ mensaje: 'Error al publicar el comentario' });
     }
 });
+
 // Eliminar un comentario por ID
 router.delete('/comentarios/:id', async (req, res) => {
     const { id } = req.params;
