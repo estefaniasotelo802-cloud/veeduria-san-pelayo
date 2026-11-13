@@ -22,8 +22,8 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-// --- ENDPOINT DE AUTENTICACIÓN (LOGIN) ---
-app.post('/login', async (req, res) => {
+// --- ENDPOINT DE AUTENTICACIÓN (LOGIN) BAJO /obras/login ---
+app.post('/obras/login', async (req, res) => {
   const { cedula, password } = req.body;
 
   try {
@@ -73,11 +73,10 @@ async function inicializarBaseDeDatos() {
         `);
         console.log("Tabla 'usuarios' verificada o creada exitosamente.");
 
-        // 2. Verificar si ya existe un admin (por ejemplo, con cédula '1073890123')
+        // 2. Verificar si ya existe un admin (cédula '1073890123')
         const [rows] = await pool.query('SELECT * FROM usuarios WHERE cedula = ?', ['1073890123']);
         if (rows.length === 0) {
-            // Si no existe, lo creamos con contraseña hasheada (ej: '12ad34m')
-            const bcrypt = require('bcrypt');
+            // Usamos el bcrypt importado arriba correctamente
             const hashedPassword = await bcrypt.hash('12ad34m', 10);
             
             await pool.query('INSERT INTO usuarios (cedula, password, rol) VALUES (?, ?, ?)', 
@@ -90,7 +89,7 @@ async function inicializarBaseDeDatos() {
     }
 }
 
-// Ejecutar esta función justo después de que conectes tu servidor
+// Ejecutar la inicialización al arrancar
 inicializarBaseDeDatos();
 
 // --- RUTAS DE OBRAS ---
