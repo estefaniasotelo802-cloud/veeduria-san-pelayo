@@ -41,12 +41,16 @@ const administradoresAutorizados = [
   }
 })();
 
-// 2. ENDPOINTS DE AUTENTICACIÓN (LOGIN)
+// 2. ENDPOINTS DE AUTENTICACIÓN Y VISTAS
 
-// NUEVO: Ruta GET para mostrar la vista/página de login en el navegador
+// Ruta GET para mostrar la vista del login en el navegador
 router.get('/login', (req, res) => {
-  // Ajusta la ruta '../public/login.html' según dónde tengas guardado tu archivo HTML de login
   res.sendFile(path.join(__dirname, '../public/login.html'));
+});
+
+// Ruta GET para mostrar el panel admin de forma limpia
+router.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/admin.html'));
 });
 
 // Ruta POST para procesar el inicio de sesión

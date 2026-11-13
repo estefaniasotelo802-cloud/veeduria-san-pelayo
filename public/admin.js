@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tablaComentariosAdmin.innerHTML = '';
 
             if (comentarios.length === 0) {
-                tablaComentariosAdmin.innerHTML = '<tr><td colspan="5" style="padding: 15px; text-align: center; color: #64748b;">No hay comentarios registrados aún.</td></tr>';
+                tablaComentariosAdmin.innerHTML = '<tr><td colspan="4" style="padding: 15px; text-align: center; color: #64748b;">No hay comentarios registrados aún.</td></tr>';
                 return;
             }
 
@@ -59,12 +59,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const fila = document.createElement('tr');
                 fila.style.borderBottom = '1px solid #e2e8f0';
                 fila.innerHTML = `
-                    <td style="padding: 10px;">${obra.id}</td>
-                    <td style="padding: 10px;">${obra.nombre}</td>
-                    <td style="padding: 10px;">${obra.sector}</td>
-                    <td style="padding: 10px; display: flex; gap: 8px;">
-                        <button onclick="prepararEdicionPorId(${obra.id})" style="background-color: #0284c7 !important; color: white !important; border: none !important; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Editar</button>
-                        <button onclick="eliminarObra(${obra.id})" style="background-color: #dc2626 !important; color: white !important; border: none !important; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Eliminar</button>
+                    <td style="padding: 10px;">${c.id}</td>
+                    <td style="padding: 10px;">${c.obra_nombre || 'Obra #' + (c.obra_id || '')}</td>
+                    <td style="padding: 10px;">${c.comentario || c.texto || ''}</td>
+                    <td style="padding: 10px;">
+                        <button onclick="eliminarComentarioAdmin(${c.id})" style="background-color: #dc2626 !important; color: white !important; border: none !important; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Eliminar</button>
                     </td>
                 `;
                 tablaComentariosAdmin.appendChild(fila);
