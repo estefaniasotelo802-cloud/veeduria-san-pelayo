@@ -43,14 +43,14 @@ const administradoresAutorizados = [
 
 // 2. ENDPOINTS DE AUTENTICACIÓN Y VISTAS
 
-// Ruta GET para mostrar la vista del login en el navegador
+// Ruta GET para mostrar la vista del login en el navegador (apuntando correctamente a la carpeta public de la raíz)
 router.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/login.html'));
+  res.sendFile(path.resolve('public/login.html'));
 });
 
 // Ruta GET para mostrar el panel admin de forma limpia
 router.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/admin.html'));
+  res.sendFile(path.resolve('public/admin.html'));
 });
 
 // Ruta POST para procesar el inicio de sesión
