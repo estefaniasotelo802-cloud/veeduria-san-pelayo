@@ -59,6 +59,40 @@ app.post('/login', async (req, res) => {
   }
 });
 
+// Función para auto-crear la tabla de usuarios y un admin por defecto al arrancar
+async function inicializarBaseDeDatos() {
+    try {
+        // 1. Crear la tabla usuarios si no existe
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS usuarios (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              cedula VARCHAR(20) NOT NULL UNIQUE,
+              password VARCHAR(255) NOT NULL,
+              rol INT NOT NULL DEFAULT 1
+            )
+        `);
+        console.log("Tabla 'usuarios' verificada o creada exitosamente.");
+
+        // 2. Verificar si ya existe un admin (por ejemplo, con cédula '1073890123')
+        const [rows] = await pool.query('SELECT * FROM usuarios WHERE cedula = ?', ['1073890123']);
+        if (rows.length === 0) {
+            // Si no existe, lo creamos con contraseña hasheada (ej: '12ad34m')
+            const bcrypt = require('bcrypt');
+            const hashedPassword = await bcrypt.hash('12ad34m', 10);
+            
+            await pool.query('INSERT INTO usuarios (cedula, password, rol) VALUES (?, ?, ?)', 
+                ['1073890123', hashedPassword, 1]
+            );
+            console.log("Usuario administrador predeterminado creado con éxito.");
+        }
+    } catch (error) {
+        console.error("Error al inicializar la base de datos:", error);
+    }
+}
+
+// Ejecutar esta función justo después de que conectes tu servidor
+inicializarBaseDeDatos();
+
 // --- RUTAS DE OBRAS ---
 app.use('/obras', obrasRouter);
 
