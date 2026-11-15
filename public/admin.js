@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Función para cargar las obras en el panel de administración
     async function cargarObrasAdmin() {
         try {
-            const respuesta = await fetch('/api/obras');
+            const respuesta = await fetch('/obras');
             const obras = await respuesta.json();
             obrasCache = obras;
             
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!tablaComentariosAdmin) return;
 
         try {
-            const respuesta = await fetch('/api/comentarios');
+            const respuesta = await fetch('/obras/comentarios');
             const comentarios = await respuesta.json();
 
             tablaComentariosAdmin.innerHTML = '';
@@ -97,13 +97,13 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             let respuesta;
             if (id) {
-                respuesta = await fetch(`/api/obras/${id}`, {
+                respuesta = await fetch(`/obras/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(datosObra)
                 });
             } else {
-                respuesta = await fetch('/api/obras', {
+                respuesta = await fetch('/obras', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(datosObra)
@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.eliminarObra = async function(id) {
         if (confirm('¿Estás segura de que deseas eliminar esta obra?')) {
             try {
-                const respuesta = await fetch(`/api/obras/${id}`, {
+                const respuesta = await fetch(`/obras/${id}`, {
                     method: 'DELETE'
                 });
 
@@ -181,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.eliminarComentarioAdmin = async function(id) {
         if (confirm('¿Estás seguro de que deseas eliminar este comentario?')) {
             try {
-                const respuesta = await fetch(`/api/comentarios/${id}`, {
+                const respuesta = await fetch(`/obras/comentarios/${id}`, {
                     method: 'DELETE'
                 });
 
