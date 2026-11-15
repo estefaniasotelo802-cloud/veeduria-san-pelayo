@@ -16,9 +16,20 @@ const administradoresAutorizados = [
   { cedula: '7350284', passwordPlana: 'val6790' }
 ];
 
-// Sembrado automático al encender el servidor
+// Sembrado automático al encender el servidor y creación automática de tablas si faltan
 (async () => {
   try {
+    // Asegurar que la tabla comentarios exista en MySQL
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS comentarios (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        ciudadano VARCHAR(255) DEFAULT 'Anónimo',
+        comentario TEXT NOT NULL,
+        obra_id INT DEFAULT NULL,
+        fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     const saltRounds = 10;
     for (const admin of administradoresAutorizados) {
       const passwordHash = await bcrypt.hash(admin.passwordPlana, saltRounds);
@@ -37,7 +48,7 @@ const administradoresAutorizados = [
       }
     }
   } catch (error) {
-    console.error('Error al sincronizar administradores:', error);
+    console.error('Error al inicializar la base de datos:', error);
   }
 })();
 
@@ -155,7 +166,7 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// 4. ENDPOINTS DE COMENTARIOS (Blindados con múltiples respaldos)
+// 4. ENDPOINTS DE COMENTARIOS (Blindados con auto-creación de tabla y respaldos)
 
 router.get('/comentarios', async (req, res) => {
     try {
@@ -184,7 +195,6 @@ router.post('/comentarios', async (req, res) => {
         const mensaje = comentario || texto || '';
         const idObra = obra_id ? obra_id : null;
 
-        // Intento 1: Columnas completas (ciudadano, comentario, obra_id, fecha)
         try {
             const [resultado] = await pool.query(
                 'INSERT INTO comentarios (ciudadano, comentario, obra_id, fecha) VALUES (?, ?, ?, NOW())',
@@ -192,7 +202,6 @@ router.post('/comentarios', async (req, res) => {
             );
             return res.status(201).json({ mensaje: 'Comentario guardado', id: resultado.insertId });
         } catch (e1) {
-            // Intento 2: Columnas alternativas (nombre, texto)
             try {
                 const [resultado] = await pool.query(
                     'INSERT INTO comentarios (nombre, texto) VALUES (?, ?)',
@@ -200,7 +209,6 @@ router.post('/comentarios', async (req, res) => {
                 );
                 return res.status(201).json({ mensaje: 'Comentario guardado', id: resultado.insertId });
             } catch (e2) {
-                // Intento 3: Columnas (ciudadano, comentario) sin fecha ni obra_id
                 const [resultado] = await pool.query(
                     'INSERT INTO comentarios (ciudadano, comentario) VALUES (?, ?)',
                     [autor, mensaje]
