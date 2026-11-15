@@ -1,14 +1,13 @@
 import mysql from 'mysql2/promise';
 import 'dotenv/config';
 
-export const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT),
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  waitForConnections: true,
-  connectionLimit: 10
+const db = mysql.createConnection({
+  host: 'tramway.proxy.rlwy.net',
+  user: 'root',
+  password: 'tu_password',
+  database: 'railway',
+  port: 33818,
+  charset: 'utf8mb4' 
 });
 
 console.log('Pool de MySQL configurado');
