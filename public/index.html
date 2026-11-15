@@ -80,6 +80,7 @@
     </div>
   </section>
 
+  <!-- Sección: Buzón de Comentarios -->
   <section id="comentarios" class="section-container seccion-comentarios" style="margin-top: 20px; margin-bottom: 40px; padding: 25px; background: #f8f9fa; border-radius: 8px;">
     <h3>Buzón de Comentarios Ciudadanos</h3>
     
@@ -99,7 +100,7 @@
     <h2>Sección de Veeduría Ciudadana</h2>
     <p class="section-lead">Consulta en tiempo real el estado de los proyectos, sus fechas y su ubicación en el mapa interactivo de San Pelayo.</p>
     
-    <!-- Contenedor con diseño de tarjeta elegante para evitar el aspecto plano/enredado -->
+    <!-- Contenedor de la Tabla -->
     <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 30px;">
       <div class="table-responsive" style="overflow-x: auto;">
         <table class="tabla-obras" style="width: 100%; border-collapse: collapse; text-align: left;">
@@ -121,19 +122,15 @@
       </div>
     </div>
 
-    <!-- Contenedor del Mapa -->
+    <!-- Contenedor Único del Mapa -->
     <div id="map" style="height: 450px; border-radius: 8px; border: 1px solid #e2e8f0;"></div>
-  </section>
-
-    <!-- Contenedor del Mapa -->
-    <div id="map" style="margin-top: 30px; height: 450px; border-radius: 8px;"></div>
   </section>
 
   <!-- Widget Flotante del Chatbot -->
   <div id="chatbot-container" class="chatbot-container">
     <button id="chat-toggle-btn" class="chatbot-toggle-btn" title="Asistente Virtual" style="background: none; border: none; cursor: pointer; padding: 0;">
-  <img src="/widget.jpg" alt="Asistente" style="width: 55px; height: 55px; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
-</button>
+      <img src="/widget.jpg" alt="Asistente" style="width: 55px; height: 55px; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+    </button>
     <div id="chat-box" class="chatbot-box">
       <div class="chatbot-header">
         <span>Asistente Veeduría Pelayo</span>
@@ -151,7 +148,7 @@
     </div>
   </div>
 
-  <!-- Pie de Página (Ubicado al final de toda la página) -->
+  <!-- Pie de Página -->
   <footer>
     <p>&copy; 2026 Veeduría Ciudadana de San Pelayo. Todos los derechos reservados.</p>
   </footer>
@@ -176,7 +173,8 @@
           div.style.padding = '12px';
           div.style.borderRadius = '6px';
           div.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
-          div.innerHTML = `<strong>${c.nombre}</strong> <span style="font-size: 12px; color: #666; float: right;">${new Date(c.fecha).toLocaleDateString()}</span><p style="margin: 5px 0 0 0;">${c.comentario}</p>`;
+          // Se usa c.ciudadano en lugar de c.nombre para que coincida con la base de datos
+          div.innerHTML = `<strong>${c.ciudadano}</strong> <span style="font-size: 12px; color: #666; float: right;">${new Date(c.fecha).toLocaleDateString()}</span><p style="margin: 5px 0 0 0;">${c.comentario}</p>`;
           listaComentarios.appendChild(div);
         });
       } catch (error) {
@@ -186,14 +184,15 @@
 
     formComentario.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const nombre = document.getElementById('nombreUsuario').value;
+      const ciudadano = document.getElementById('nombreUsuario').value;
       const comentario = document.getElementById('textoComentario').value;
 
       try {
+        // Se envía 'ciudadano' para que el backend lo reciba correctamente en req.body
         const respuesta = await fetch('/obras/comentarios', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nombre, comentario })
+          body: JSON.stringify({ ciudadano, comentario })
         });
 
         if (respuesta.ok) {

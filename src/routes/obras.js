@@ -179,22 +179,24 @@ router.get('/comentarios', async (req, res) => {
 });
 
 // Registrar un nuevo comentario
+// Endpoint para guardar un nuevo comentario
 router.post('/comentarios', async (req, res) => {
-    const { nombre, comentario } = req.body;
-
-    if (!nombre || !comentario) {
-        return res.status(400).json({ mensaje: 'Todos los campos son obligatorios' });
-    }
-
     try {
-        await pool.query(
-            'INSERT INTO comentarios (nombre, comentario) VALUES (?, ?)',
-            [nombre, comentario]
+        const { ciudadano, comentario, obra_id } = req.body;
+        
+        // Si obra_id es opcional, usa null o un valor por defecto si viene vacío
+        const idObra = obra_id ? obra_id : null;
+        const autor = ciudadano ? ciudadano : 'Anónimo';
+
+        const [resultado] = await pool.query(
+            'INSERT INTO comentarios (ciudadano, comentario, obra_id, fecha) VALUES (?, ?, ?, NOW())',
+            [autor, comentario, idObra]
         );
-        res.status(201).json({ mensaje: 'Comentario publicado con éxito' });
+
+        res.status(201).json({ mensaje: 'Comentario guardado exitosamente', id: resultado.insertId });
     } catch (error) {
-        console.error('Error al registrar comentario:', error);
-        res.status(500).json({ mensaje: 'Error al publicar el comentario' });
+        console.error('Error al guardar comentario:', error);
+        res.status(500).json({ error: 'Error al guardar el comentario' });
     }
 });
 
