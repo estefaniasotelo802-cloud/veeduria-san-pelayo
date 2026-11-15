@@ -13,40 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let obrasCache = [];
 
-    // Función para cargar las obras en el panel de administración
-    async function cargarObrasAdmin() {
-        try {
-            const respuesta = await fetch('/obras');
-            const obras = await respuesta.json();
-            obrasCache = obras;
-            
-            tablaAdminBody.innerHTML = '';
-            
-            if (obras.length === 0) {
-                tablaAdminBody.innerHTML = '<tr><td colspan="4" style="padding: 15px; text-align: center; color: #64748b;">No hay obras registradas aún.</td></tr>';
-                return;
-            }
-
-            obras.forEach(obra => {
-                const fila = document.createElement('tr');
-                fila.style.borderBottom = '1px solid #e2e8f0';
-                fila.innerHTML = `
-                    <td style="padding: 10px;">${obra.id}</td>
-                    <td style="padding: 10px;">${obra.nombre}</td>
-                    <td style="padding: 10px;">${obra.sector}</td>
-                    <td style="padding: 10px; display: flex; gap: 8px;">
-                        <button onclick="prepararEdicionPorId(${obra.id})" style="background-color: #0284c7 !important; color: white !important; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Editar</button>
-                        <button onclick="eliminarObra(${obra.id})" style="background-color: #dc2626 !important; color: white !important; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Eliminar</button>
-                    </td>
-                `;
-                tablaAdminBody.appendChild(fila);
-            });
-        } catch (error) {
-            console.error('Error al cargar las obras:', error);
-        }
-    }
-
-    // Función para cargar los comentarios en el panel de administración
+  // Función para cargar los comentarios en el panel de administración
     async function cargarComentariosAdmin() {
         if (!tablaComentariosAdmin) return;
 
@@ -56,18 +23,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
             tablaComentariosAdmin.innerHTML = '';
 
-            if (comentarios.length === 0) {
-                tablaComentariosAdmin.innerHTML = '<tr><td colspan="4" style="padding: 15px; text-align: center; color: #64748b;">No hay comentarios registrados aún.</td></tr>';
+            if (!Array.isArray(comentarios) || comentarios.length === 0) {
+                tablaComentariosAdmin.innerHTML = '<tr><td colspan="5" style="padding: 15px; text-align: center; color: #64748b;">No hay comentarios registrados aún.</td></tr>';
                 return;
             }
 
             comentarios.forEach(c => {
                 const fila = document.createElement('tr');
                 fila.style.borderBottom = '1px solid #e2e8f0';
+                
+                // Formatear datos de forma segura
+                const autor = c.ciudadano || c.nombre || 'Anónimo';
+                const obraTexto = c.obra_nombre ? c.obra_nombre : (c.obra_id ? 'Obra #' + c.obra_id : 'General');
+                const textoComentario = c.comentario || c.texto || '';
+                const fechaFormateada = c.fecha ? new Date(c.fecha).toLocaleDateString() : 'Sin fecha';
+
                 fila.innerHTML = `
                     <td style="padding: 10px;">${c.id}</td>
-                    <td style="padding: 10px;">${c.obra_nombre || 'Obra #' + (c.obra_id || '')}</td>
-                    <td style="padding: 10px;">${c.comentario || c.texto || ''}</td>
+                    <td style="padding: 10px;"><strong>${autor}</strong><br><span style="font-size: 11px; color: #64748b;">${obraTexto}</span></td>
+                    <td style="padding: 10px;">${textoComentario}</td>
+                    <td style="padding: 10px; color: #64748b; font-size: 0.9rem;">${fechaFormateada}</td>
                     <td style="padding: 10px;">
                         <button onclick="eliminarComentarioAdmin(${c.id})" style="background-color: #dc2626 !important; color: white !important; border: none !important; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Eliminar</button>
                     </td>
@@ -78,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error al cargar comentarios en el panel:', error);
         }
     }
-
+    
     // Registrar o Actualizar obra
     formObra.addEventListener('submit', async (e) => {
         e.preventDefault();
