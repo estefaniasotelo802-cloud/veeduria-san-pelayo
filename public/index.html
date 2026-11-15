@@ -153,7 +153,7 @@
     <p>&copy; 2026 Veeduría Ciudadana de San Pelayo. Todos los derechos reservados.</p>
   </footer>
 
-  <!-- Scripts de Leaflet y Aplicación Principal -->
+<!-- Scripts de Leaflet y Aplicación Principal -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="/app.js"></script>
 
@@ -167,14 +167,27 @@
         const comentarios = await respuesta.json();
         
         listaComentarios.innerHTML = '';
+        if (!Array.isArray(comentarios)) return;
+
         comentarios.forEach(c => {
           const div = document.createElement('div');
           div.style.background = 'white';
           div.style.padding = '12px';
           div.style.borderRadius = '6px';
           div.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
-          // Se usa c.ciudadano en lugar de c.nombre para que coincida con la base de datos
-          div.innerHTML = `<strong>${c.ciudadano}</strong> <span style="font-size: 12px; color: #666; float: right;">${new Date(c.fecha).toLocaleDateString()}</span><p style="margin: 5px 0 0 0;">${c.comentario}</p>`;
+          
+          // Validación segura de campos para evitar textos indefinidos
+          const autor = c.ciudadano || c.nombre || 'Anónimo';
+          const texto = c.comentario || c.texto || '';
+          const fechaStr = c.fecha ? new Date(c.fecha).toLocaleDateString() : '';
+          const obraInfo = c.obra_nombre ? `<div style="font-size: 12px; color: #0284c7; margin-top: 2px;">Obra: ${c.obra_nombre}</div>` : '';
+
+          div.innerHTML = `
+            <strong>${autor}</strong> 
+            <span style="font-size: 12px; color: #666; float: right;">${fechaStr}</span>
+            ${obraInfo}
+            <p style="margin: 5px 0 0 0;">${texto}</p>
+          `;
           listaComentarios.appendChild(div);
         });
       } catch (error) {
@@ -188,7 +201,7 @@
       const comentario = document.getElementById('textoComentario').value;
 
       try {
-        // Se envía 'ciudadano' para que el backend lo reciba correctamente en req.body
+        
         const respuesta = await fetch('/obras/comentarios', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -203,6 +216,7 @@
         }
       } catch (error) {
         console.error('Error:', error);
+        alert('No se pudo conectar con el servidor.');
       }
     });
 

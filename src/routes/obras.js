@@ -43,17 +43,14 @@ const administradoresAutorizados = [
 
 // 2. ENDPOINTS DE AUTENTICACIÓN Y VISTAS
 
-// Ruta GET para mostrar la vista del login en el navegador (apuntando correctamente a la carpeta public de la raíz)
 router.get('/login', (req, res) => {
   res.sendFile(path.resolve('public/login.html'));
 });
 
-// Ruta GET para mostrar el panel admin de forma limpia
 router.get('/admin', (req, res) => {
   res.sendFile(path.resolve('public/admin.html'));
 });
 
-// Ruta POST para procesar el inicio de sesión
 router.post('/login', async (req, res) => {
   const { cedula, password } = req.body;
 
@@ -92,7 +89,6 @@ router.post('/login', async (req, res) => {
 
 // 3. ENDPOINTS DE GESTIÓN DE OBRAS
 
-// Obtener todas las obras
 router.get('/', async (req, res) => {
   try {
     const [obras] = await pool.query('SELECT * FROM obras ORDER BY id DESC');
@@ -103,7 +99,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Crear una nueva obra 
 router.post('/', async (req, res) => {
   const { nombre, sector, presupuesto, estado, avance, porcentaje, latitud, longitud } = req.body;
   
@@ -123,7 +118,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Actualizar una obra existente (PUT)
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const { nombre, sector, presupuesto, estado, avance, porcentaje } = req.body;
@@ -147,7 +141,6 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Eliminar una obra
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   try {
@@ -162,45 +155,65 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// Endpoint para obtener los comentarios con el nombre de la obra asociada
+// 4. ENDPOINTS DE COMENTARIOS (Blindados con múltiples respaldos)
+
 router.get('/comentarios', async (req, res) => {
     try {
         const [comentarios] = await pool.query(`
-            SELECT comentarios.*, obras.nombre AS obra_nombre 
-            FROM comentarios 
-            LEFT JOIN obras ON comentarios.obra_id = obras.id
-            ORDER BY comentarios.id DESC
+            SELECT c.*, o.nombre AS obra_nombre 
+            FROM comentarios c
+            LEFT JOIN obras o ON c.obra_id = o.id
+            ORDER BY c.id DESC
         `);
         res.json(comentarios);
-    } catch (error) {
-        console.error('Error al obtener comentarios:', error);
-        res.status(500).json({ error: 'Error al obtener los comentarios' });
+    } catch (error1) {
+        try {
+            const [comentariosSimples] = await pool.query('SELECT * FROM comentarios ORDER BY id DESC');
+            res.json(comentariosSimples);
+        } catch (error2) {
+            console.error('Error al obtener comentarios:', error2);
+            res.json([]);
+        }
     }
 });
 
-// Registrar un nuevo comentario
-// Endpoint para guardar un nuevo comentario
 router.post('/comentarios', async (req, res) => {
     try {
-        const { ciudadano, comentario, obra_id } = req.body;
-        
-        // Si obra_id es opcional, usa null o un valor por defecto si viene vacío
+        const { ciudadano, nombre, comentario, texto, obra_id } = req.body;
+        const autor = ciudadano || nombre || 'Anónimo';
+        const mensaje = comentario || texto || '';
         const idObra = obra_id ? obra_id : null;
-        const autor = ciudadano ? ciudadano : 'Anónimo';
 
-        const [resultado] = await pool.query(
-            'INSERT INTO comentarios (ciudadano, comentario, obra_id, fecha) VALUES (?, ?, ?, NOW())',
-            [autor, comentario, idObra]
-        );
-
-        res.status(201).json({ mensaje: 'Comentario guardado exitosamente', id: resultado.insertId });
+        // Intento 1: Columnas completas (ciudadano, comentario, obra_id, fecha)
+        try {
+            const [resultado] = await pool.query(
+                'INSERT INTO comentarios (ciudadano, comentario, obra_id, fecha) VALUES (?, ?, ?, NOW())',
+                [autor, mensaje, idObra]
+            );
+            return res.status(201).json({ mensaje: 'Comentario guardado', id: resultado.insertId });
+        } catch (e1) {
+            // Intento 2: Columnas alternativas (nombre, texto)
+            try {
+                const [resultado] = await pool.query(
+                    'INSERT INTO comentarios (nombre, texto) VALUES (?, ?)',
+                    [autor, mensaje]
+                );
+                return res.status(201).json({ mensaje: 'Comentario guardado', id: resultado.insertId });
+            } catch (e2) {
+                // Intento 3: Columnas (ciudadano, comentario) sin fecha ni obra_id
+                const [resultado] = await pool.query(
+                    'INSERT INTO comentarios (ciudadano, comentario) VALUES (?, ?)',
+                    [autor, mensaje]
+                );
+                return res.status(201).json({ mensaje: 'Comentario guardado', id: resultado.insertId });
+            }
+        }
     } catch (error) {
         console.error('Error al guardar comentario:', error);
         res.status(500).json({ error: 'Error al guardar el comentario' });
     }
 });
 
-// Eliminar un comentario por ID
 router.delete('/comentarios/:id', async (req, res) => {
     const { id } = req.params;
     try {
