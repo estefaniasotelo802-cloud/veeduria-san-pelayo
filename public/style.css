@@ -22,7 +22,8 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: var(--dark-text);
   line-height: 1.6;
-  background-color: var(--light-bg);
+  /* Cambiamos el fondo plano por un degradado muy sutil que da profundidad */
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
   overflow-x: hidden;
   max-width: 100%;
 }
@@ -204,7 +205,9 @@ body {
 }
 
 .bg-light {
-  background-color: var(--light-bg);
+  background: linear-gradient(180deg, #e9ecef 0%, #dee2e6 100%) !important;
+  border-top: 1px solid #ced4da;
+  border-bottom: 1px solid #ced4da;
 }
 
 .section-container h2 {
@@ -221,12 +224,18 @@ body {
   margin: 0 auto 50px;
 }
 
-/* Tarjetas Glassmorphism */
-.cards-grid {
-  display: flex;
-  gap: 25px;
-  justify-content: center;
-  flex-wrap: wrap;
+/* Tarjetas Glassmorphism con más presencia */
+.card, .history-content, .seccion-comentarios, .tabla-container-glass {
+  background: rgba(255, 255, 255, 0.92) !important; /* Menos translúcidas para que no se fundan con el fondo */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08) !important; /* Sombra más elegante */
+}
+
+/* Tarjetas de objetivos con borde superior destacado */
+.card {
+  border-top: 5px solid var(--primary-color) !important;
 }
 
 .card {
@@ -412,12 +421,12 @@ body {
 }
 
 .tabla-obras th {
-  background-color: #f1f5f9;
-  color: var(--secondary-navy);
-  padding: 14px 16px;
+  background-color: var(--secondary-navy) !important;
+  color: var(--white) !important;
+  padding: 16px;
   font-size: 0.9rem;
   font-weight: 700;
-  border-bottom: 2px solid #e2e8f0;
+  letter-spacing: 0.5px;
 }
 
 .tabla-obras td {
