@@ -1,8 +1,3 @@
-// Validar que el administrador haya iniciado sesión antes de mostrar cualquier cosa
-if (localStorage.getItem('autenticado') !== 'true') {
-    window.location.href = '/obras/login';
-}
-
 let obrasCache = [];
 
 // Función global para cargar las obras en el panel de administración
