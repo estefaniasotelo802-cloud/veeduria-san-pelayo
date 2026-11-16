@@ -3,48 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
     inicializarMapa();
     inicializarChatbot();
     cargarComentariosPublicos(); 
-    inicializarFormularioComentarios();
-    inicializarAnimacionesScroll();
-    inicializarAcordeones();
+    inicializarFormularioComentarios(); 
 });
-
-function inicializarAnimacionesScroll() {
-    const elementos = document.querySelectorAll('.reveal');
-    if (!elementos.length) return;
-
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
-                observer.unobserve(entry.target);
-            }
-        });
-    }, { threshold: 0.15 });
-
-    elementos.forEach(el => observer.observe(el));
-}
-
-function inicializarAcordeones() {
-    const items = document.querySelectorAll('.accordion-item');
-    if (!items.length) return;
-
-    items.forEach(item => {
-        const button = item.querySelector('.accordion-button');
-        if (!button) return;
-
-        button.addEventListener('click', () => {
-            const isOpen = item.classList.contains('active');
-
-            items.forEach(other => {
-                other.classList.remove('active');
-            });
-
-            if (!isOpen) {
-                item.classList.add('active');
-            }
-        });
-    });
-}
 
 // Variables globales para sincronizar tabla y mapa
 let mapaGlobal = null;
