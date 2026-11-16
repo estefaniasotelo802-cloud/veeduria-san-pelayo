@@ -26,7 +26,7 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
             }
 
             // Redirigimos correctamente a la ruta del panel de administración en el router de obras
-            window.location.href = '/obras/admin';
+            window.location.href = '/admin';
         } else {
             mensajeError.textContent = resultado.mensaje || 'Credenciales incorrectas';
         }
