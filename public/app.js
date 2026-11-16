@@ -2,7 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
     obtenerObrasPublicas();
     inicializarMapa();
     inicializarChatbot();
-    cargarComentariosPublicos(); // Cargamos los comentarios al iniciar
+    cargarComentariosPublicos(); 
+    inicializarFormularioComentarios(); 
 });
 
 // Variables globales para sincronizar tabla y mapa
@@ -219,7 +220,48 @@ async function cargarComentariosPublicos() {
     }
 }
 
-// 4. CHATBOT
+// 4. ENVÍO DE NUEVOS COMENTARIOS (POST)
+function inicializarFormularioComentarios() {
+    const form = document.getElementById('formComentario') || document.querySelector('form');
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const inputNombre = document.querySelector('input[name="ciudadano"]') || document.querySelector('input[type="text"]');
+        const inputTexto = document.querySelector('textarea');
+
+        if (!inputNombre || !inputTexto) return;
+
+        const nuevoComentario = {
+            ciudadano: inputNombre.value.trim() || 'Anónimo',
+            comentario: inputTexto.value.trim()
+        };
+
+        try {
+            const respuesta = await fetch('/obras/comentarios', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(nuevoComentario)
+            });
+
+            if (respuesta.ok) {
+                inputNombre.value = '';
+                inputTexto.value = '';
+                cargarComentariosPublicos();
+            } else {
+                alert('Hubo un error al registrar el comentario en el servidor.');
+            }
+        } catch (error) {
+            console.error('Error de red al enviar el comentario:', error);
+            alert('No se pudo conectar con el servidor.');
+        }
+    });
+}
+
+// 5. CHATBOT
 
 function inicializarChatbot() {
     const chatToggleBtn = document.getElementById('chat-toggle-btn');
