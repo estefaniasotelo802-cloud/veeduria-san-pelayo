@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     obtenerObrasPublicas();
     inicializarMapa();
     inicializarChatbot();
+    cargarComentariosPublicos(); // Cargamos los comentarios al iniciar
 });
 
 // Variables globales para sincronizar tabla y mapa
@@ -34,8 +35,8 @@ async function obtenerObrasPublicas() {
             fila.style.cursor = 'pointer'; 
             
             const brutoPorcentaje = obra.avance_porcentaje !== undefined && obra.avance_porcentaje !== null ? obra.avance_porcentaje : 
-                                     (obra.porcentaje !== undefined && obra.porcentaje !== null ? obra.porcentaje : 
-                                     (obra.avance !== undefined && obra.avance !== null ? obra.avance : 0));
+                                   (obra.porcentaje !== undefined && obra.porcentaje !== null ? obra.porcentaje : 
+                                   (obra.avance !== undefined && obra.avance !== null ? obra.avance : 0));
             const porcentajeVal = brutoPorcentaje !== '' ? brutoPorcentaje : 0;
 
             // Formatear fechas de manera segura
@@ -126,8 +127,8 @@ async function cargarMarcadoresEnMapa(map) {
             const lng = obra.longitud ? parseFloat(obra.longitud) : -75.8369;
 
             const brutoPorcentaje = obra.avance_porcentaje !== undefined && obra.avance_porcentaje !== null ? obra.avance_porcentaje : 
-                                     (obra.porcentaje !== undefined && obra.porcentaje !== null ? obra.porcentaje : 
-                                     (obra.avance !== undefined && obra.avance !== null ? obra.avance : 0));
+                                   (obra.porcentaje !== undefined && obra.porcentaje !== null ? obra.porcentaje : 
+                                   (obra.avance !== undefined && obra.avance !== null ? obra.avance : 0));
             const porcentajeVal = brutoPorcentaje !== '' ? brutoPorcentaje : 0;
 
             const colorPin = obtenerColorPorEstado(obra.estado, porcentajeVal);
@@ -166,7 +167,59 @@ async function cargarMarcadoresEnMapa(map) {
     }
 }
 
-// 3. CHATBOT
+// 3. GESTIÓN DE COMENTARIOS PÚBLICOS CON AVATAR
+
+function obtenerIniciales(nombre) {
+    if (!nombre || nombre.toLowerCase() === 'anónimo') return '👤';
+    const partes = nombre.trim().split(' ');
+    if (partes.length >= 2) {
+        return (partes[0][0] + partes[1][0]).toUpperCase();
+    }
+    return partes[0].substring(0, 2).toUpperCase();
+}
+
+async function cargarComentariosPublicos() {
+    const contenedorComentarios = document.getElementById('contenedorComentarios') || document.getElementById('listaComentarios');
+    if (!contenedorComentarios) return;
+
+    try {
+        const respuesta = await fetch('/obras/comentarios');
+        const comentarios = await respuesta.json();
+
+        contenedorComentarios.innerHTML = '';
+
+        if (!Array.isArray(comentarios) || comentarios.length === 0) {
+            contenedorComentarios.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">No hay comentarios registrados aún. ¡Sé el primero en opinar!</p>';
+            return;
+        }
+
+        comentarios.forEach(c => {
+            const autor = c.ciudadano || c.nombre || 'Anónimo';
+            const iniciales = obtenerIniciales(autor);
+            const textoComentario = c.comentario || c.texto || '';
+            const fechaFormateada = c.fecha ? new Date(c.fecha).toLocaleDateString() : 'Reciente';
+
+            const divComentario = document.createElement('div');
+            divComentario.className = 'comentario-item';
+            divComentario.innerHTML = `
+                <div class="comentario-avatar">${iniciales}</div>
+                <div class="comentario-contenido">
+                    <div class="comentario-header">
+                        <span class="comentario-autor">${autor}</span>
+                        <span class="comentario-fecha">${fechaFormateada}</span>
+                    </div>
+                    <p class="comentario-texto">${textoComentario}</p>
+                </div>
+            `;
+            contenedorComentarios.appendChild(divComentario);
+        });
+
+    } catch (error) {
+        console.error('Error al cargar comentarios públicos:', error);
+    }
+}
+
+// 4. CHATBOT
 
 function inicializarChatbot() {
     const chatToggleBtn = document.getElementById('chat-toggle-btn');

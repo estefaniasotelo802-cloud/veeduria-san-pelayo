@@ -829,3 +829,60 @@ table.admin-table tr td button.btn-eliminar-tabla,
 .volver-link:hover {
     text-decoration: underline;
 }
+
+/* --- ESTILO DE COMENTARIO MODAL CON AVATAR --- */
+.comentario-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+/* El círculo o "logotipo" con las iniciales del usuario a la izquierda */
+.comentario-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0284c7, #10b981); /* Celestial y verde */
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.comentario-contenido {
+    flex-grow: 1;
+}
+
+.comentario-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.comentario-autor {
+    font-weight: bold;
+    color: #1e293b;
+    font-size: 0.95rem;
+}
+
+.comentario-fecha {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.comentario-texto {
+    color: #334155;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    margin: 0;
+}
