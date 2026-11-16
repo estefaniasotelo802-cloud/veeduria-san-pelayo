@@ -16,10 +16,26 @@ const administradoresAutorizados = [
   { cedula: '7350284', passwordPlana: 'val6790' }
 ];
 
-// Sembrado automático al encender el servidor y creación automática de tablas si faltan
+// Sembrado automático y creación/actualización automática de tablas en MySQL
 (async () => {
   try {
-    // Asegurar que la tabla comentarios exista en MySQL
+    // Asegurar tabla obras con todas sus columnas necesarias
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS obras (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nombre VARCHAR(255) NOT NULL,
+        sector VARCHAR(255) NOT NULL,
+        presupuesto DECIMAL(15,2) DEFAULT 0,
+        estado VARCHAR(100) DEFAULT 'En ejecución',
+        avance_porcentaje INT DEFAULT 0,
+        fecha_inicio DATE DEFAULT NULL,
+        fecha_fin DATE DEFAULT NULL,
+        latitud DECIMAL(10,8) DEFAULT 8.96500000,
+        longitud DECIMAL(11,8) DEFAULT -75.84500000
+      )
+    `);
+
+    // Asegurar tabla comentarios
     await pool.query(`
       CREATE TABLE IF NOT EXISTS comentarios (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -111,16 +127,18 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { nombre, sector, presupuesto, estado, avance, porcentaje, latitud, longitud } = req.body;
+  const { nombre, sector, presupuesto, estado, avance, porcentaje, fecha_inicio, fecha_fin, latitud, longitud } = req.body;
   
   const valorAvance = avance !== undefined && avance !== '' ? avance : (porcentaje !== undefined && porcentaje !== '' ? porcentaje : 0);
+  const fecInicio = fecha_inicio && fecha_inicio !== '' ? fecha_inicio : null;
+  const fecFin = fecha_fin && fecha_fin !== '' ? fecha_fin : null;
   const lat = latitud ? parseFloat(latitud) : 8.96500000;
   const lng = longitud ? parseFloat(longitud) : -75.84500000;
 
   try {
     const [resultado] = await pool.query(
-      'INSERT INTO obras (nombre, sector, presupuesto, estado, avance_porcentaje, latitud, longitud) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [nombre, sector, presupuesto, estado, valorAvance, lat, lng]
+      'INSERT INTO obras (nombre, sector, presupuesto, estado, avance_porcentaje, fecha_inicio, fecha_fin, latitud, longitud) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [nombre, sector, presupuesto, estado, valorAvance, fecInicio, fecFin, lat, lng]
     );
     res.status(201).json({ mensaje: 'Obra registrada con éxito', id: resultado.insertId });
   } catch (error) {
@@ -131,14 +149,16 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { nombre, sector, presupuesto, estado, avance, porcentaje } = req.body;
+  const { nombre, sector, presupuesto, estado, avance, porcentaje, fecha_inicio, fecha_fin } = req.body;
 
   const valorAvance = avance !== undefined && avance !== '' ? avance : (porcentaje !== undefined && porcentaje !== '' ? porcentaje : 0);
+  const fecInicio = fecha_inicio && fecha_inicio !== '' ? fecha_inicio : null;
+  const fecFin = fecha_fin && fecha_fin !== '' ? fecha_fin : null;
 
   try {
     const [resultado] = await pool.query(
-      'UPDATE obras SET nombre = ?, sector = ?, presupuesto = ?, estado = ?, avance_porcentaje = ? WHERE id = ?',
-      [nombre, sector, presupuesto, estado, valorAvance, id]
+      'UPDATE obras SET nombre = ?, sector = ?, presupuesto = ?, estado = ?, avance_porcentaje = ?, fecha_inicio = ?, fecha_fin = ? WHERE id = ?',
+      [nombre, sector, presupuesto, estado, valorAvance, fecInicio, fecFin, id]
     );
 
     if (resultado.affectedRows === 0) {
@@ -166,7 +186,7 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// 4. ENDPOINTS DE COMENTARIOS (Blindados con auto-creación de tabla y respaldos)
+// 4. ENDPOINTS DE COMENTARIOS
 
 router.get('/comentarios', async (req, res) => {
     try {
