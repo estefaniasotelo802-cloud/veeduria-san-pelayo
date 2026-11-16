@@ -68,14 +68,18 @@ const administradoresAutorizados = [
   }
 })();
 
-// 2. ENDPOINTS DE AUTENTICACIÓN Y VISTAS
+// 2. ENDPOINTS DE AUTENTICACIÓN Y VISTAS PROTEGIDAS
 
 router.get('/login', (req, res) => {
   res.sendFile(path.resolve('public/login.html'));
 });
 
+// Ruta blindada: Si no hay sesión de administrador activa, redirige al login
 router.get('/admin', (req, res) => {
-  res.sendFile(path.resolve('public/admin.html'));
+  if (req.session && req.session.adminAutenticado) {
+    return res.sendFile(path.resolve('public/admin.html'));
+  }
+  res.redirect('/obras/login');
 });
 
 router.post('/login', async (req, res) => {
@@ -99,6 +103,10 @@ router.post('/login', async (req, res) => {
       return res.status(403).json({ mensaje: 'Acceso denegado. No tienes permisos de administrador.' });
     }
 
+    // Registramos la sesión activa en el servidor
+    req.session.adminAutenticado = true;
+    req.session.cedula = usuario.cedula;
+
     res.json({
       mensaje: 'Acceso concedido',
       usuario: {
@@ -112,6 +120,12 @@ router.post('/login', async (req, res) => {
     console.error('Error en el proceso de login:', error);
     res.status(500).json({ mensaje: 'Error interno del servidor' });
   }
+});
+
+router.post('/logout', (req, res) => {
+  req.session.destroy(() => {
+    res.json({ mensaje: 'Sesión cerrada correctamente' });
+  });
 });
 
 // 3. ENDPOINTS DE GESTIÓN DE OBRAS
