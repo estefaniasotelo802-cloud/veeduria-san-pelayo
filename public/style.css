@@ -224,13 +224,15 @@ body {
   margin: 0 auto 50px;
 }
 
-/* Tarjetas Glassmorphism con más presencia */
-.card, .history-content, .seccion-comentarios, .tabla-container-glass {
-  background: rgba(255, 255, 255, 0.92) !important; /* Menos translúcidas para que no se fundan con el fondo */
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08) !important; /* Sombra más elegante */
+/* Tarjetas de Objetivos en Fila Horizontal */
+.cards-grid {
+  display: flex;
+  flex-direction: row; /* Fuerza la orientación horizontal */
+  justify-content: center;
+  align-items: stretch;
+  gap: 25px;
+  flex-wrap: wrap; /* Permite que bajen con elegancia solo en celulares muy pequeños */
+  width: 100%;
 }
 
 /* Tarjetas de objetivos con borde superior destacado */
@@ -244,8 +246,10 @@ body {
   -webkit-backdrop-filter: blur(12px);
   padding: 35px 25px;
   border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-  width: 300px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  flex: 1; /* Hace que compartan el espacio de manera equitativa */
+  min-width: 260px; /* Ancho mínimo para que no se aprieten demasiado */
+  max-width: 350px; /* Ancho máximo para que no crezcan de más */
   border: 1px solid var(--glass-border);
   border-top: 5px solid var(--primary-color);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
