@@ -46,6 +46,22 @@ const administradoresAutorizados = [
       )
     `);
 
+    // Asegurar que las columnas existan si la tabla fue creada anteriormente con otro esquema
+    const columnasFaltantes = [
+      "ALTER TABLE comentarios ADD COLUMN ciudadano VARCHAR(255) DEFAULT 'Anónimo'",
+      "ALTER TABLE comentarios ADD COLUMN comentario TEXT",
+      "ALTER TABLE comentarios ADD COLUMN obra_id INT DEFAULT NULL",
+      "ALTER TABLE comentarios ADD COLUMN fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+    ];
+
+    for (const sql of columnasFaltantes) {
+      try {
+        await pool.query(sql);
+      } catch (err) {
+        // Ignorar si la columna ya existe (Error 1060)
+      }
+    }
+
     const saltRounds = 10;
     for (const admin of administradoresAutorizados) {
       const passwordHash = await bcrypt.hash(admin.passwordPlana, saltRounds);
@@ -233,10 +249,38 @@ router.post('/comentarios', async (req, res) => {
       return res.status(400).json({ error: 'El comentario no puede estar vacío.' });
     }
 
-    const [resultado] = await pool.query(
-      'INSERT INTO comentarios (ciudadano, comentario, obra_id) VALUES (?, ?, ?)',
-      [autor, mensaje, idObra]
-    );
+    // Obtener columnas actuales de la tabla para insertar exactamente en las disponibles
+    const [columnas] = await pool.query('SHOW COLUMNS FROM comentarios');
+    const nombresColumnas = columnas.map(c => c.Field);
+
+    const campos = [];
+    const valores = [];
+
+    if (nombresColumnas.includes('ciudadano')) {
+      campos.push('ciudadano');
+      valores.push(autor);
+    }
+    if (nombresColumnas.includes('nombre')) {
+      campos.push('nombre');
+      valores.push(autor);
+    }
+    if (nombresColumnas.includes('comentario')) {
+      campos.push('comentario');
+      valores.push(mensaje);
+    }
+    if (nombresColumnas.includes('texto')) {
+      campos.push('texto');
+      valores.push(mensaje);
+    }
+    if (nombresColumnas.includes('obra_id')) {
+      campos.push('obra_id');
+      valores.push(idObra);
+    }
+
+    const placeholders = campos.map(() => '?').join(', ');
+    const sql = `INSERT INTO comentarios (${campos.join(', ')}) VALUES (${placeholders})`;
+
+    const [resultado] = await pool.query(sql, valores);
 
     return res.status(201).json({ mensaje: 'Comentario guardado', id: resultado.insertId });
   } catch (error) {
