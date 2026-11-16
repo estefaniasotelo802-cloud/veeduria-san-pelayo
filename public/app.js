@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     inicializarChatbot();
     cargarComentariosPublicos(); 
     inicializarFormularioComentarios(); 
+    inicializarMenuMovilYAnimaciones();
 });
 
 // Variables globales para sincronizar tabla y mapa
@@ -290,7 +291,7 @@ function inicializarChatbot() {
         if (!texto) return;
 
         const userMsg = document.createElement('div');
-        userMsg.style.cssText = "background: #8b0000; color: white; padding: 10px 14px; border-radius: 12px; border-bottom-right-radius: 4px; max-width: 85%; align-self: flex-end; word-break: break-word; line-height: 1.4; box-shadow: 0px 2px 5px rgba(0,0,0,0.03);";
+        userMsg.className = 'message user-message';
         userMsg.textContent = texto;
         chatMessages.appendChild(userMsg);
         chatInput.value = '';
@@ -298,7 +299,7 @@ function inicializarChatbot() {
 
         setTimeout(() => {
             const botMsg = document.createElement('div');
-            botMsg.style.cssText = "background: #ffffff; color: #334155; padding: 10px 14px; border-radius: 12px; border-bottom-left-radius: 4px; max-width: 85%; align-self: flex-start; word-break: break-word; line-height: 1.4; box-shadow: 0px 2px 5px rgba(0,0,0,0.03); border: 1px solid #f1f5f9;";
+            botMsg.className = 'message bot-message';
             
             const lower = texto.toLowerCase();
 
@@ -329,4 +330,34 @@ function inicializarChatbot() {
             if (e.key === 'Enter') enviarMensaje();
         });
     }
+}
+
+// 6. MENÚ MÓVIL Y ANIMACIONES SCROLL REVEAL
+function inicializarMenuMovilYAnimaciones() {
+    const toggleBtn = document.getElementById('mobile-menu');
+    const navMenu = document.getElementById('nav-links-menu');
+
+    if (toggleBtn && navMenu) {
+        toggleBtn.addEventListener('click', () => {
+            navMenu.classList.toggle('active');
+        });
+        
+        // Cerrar menú al hacer clic en un enlace de navegación
+        navMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => navMenu.classList.remove('active'));
+        });
+    }
+
+    // Observer para animaciones de aparición al hacer scroll
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, { threshold: 0.15 });
+
+    document.querySelectorAll('.section-container').forEach(sec => {
+        observer.observe(sec);
+    });
 }
