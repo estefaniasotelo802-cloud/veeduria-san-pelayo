@@ -3,7 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcrypt';
-import session from 'express-session'; // 1. Importamos express-session
+import session from 'express-session';
 import { pool } from './db.js';
 import obrasRouter from './routes/obras.js';
 
@@ -24,10 +24,16 @@ app.use(session({
   cookie: { secure: false } // Cambiar a true solo si usas HTTPS estricto en producción
 }));
 
+// --- BLOQUEO DE SEGURIDAD ANTES DE LOS ARCHIVOS ESTÁTICOS ---
+// Si alguien intenta pedir directamente admin.html por la URL, lo redirigimos al login
+app.get('/admin.html', (req, res) => {
+  return res.redirect('/login');
+});
+
 // Archivos estáticos públicos (index.html, login.html, estilos, app.js, etc.)
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Ruta principal para cargar index.html
+// Ruta principal para cargar index.html (Nota: si tu index.html está en public, déjalo con ../public/index.html)
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
@@ -45,11 +51,6 @@ app.get('/admin', (req, res) => {
     return res.sendFile(path.join(__dirname, '../views/admin.html'));
   }
   // Si no ha iniciado sesión, lo redirige al login por seguridad
-  return res.redirect('/login');
-});
-
-// Bloquear por si alguien intenta escribir /admin.html directamente en la URL
-app.get('/admin.html', (req, res) => {
   return res.redirect('/login');
 });
 
