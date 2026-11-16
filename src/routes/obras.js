@@ -203,71 +203,63 @@ router.delete('/:id', async (req, res) => {
 // 4. ENDPOINTS DE COMENTARIOS
 
 router.get('/comentarios', async (req, res) => {
+  try {
+    const [comentarios] = await pool.query(`
+      SELECT c.*, o.nombre AS obra_nombre 
+      FROM comentarios c
+      LEFT JOIN obras o ON c.obra_id = o.id
+      ORDER BY c.id DESC
+    `);
+    res.json(comentarios);
+  } catch (error1) {
     try {
-        const [comentarios] = await pool.query(`
-            SELECT c.*, o.nombre AS obra_nombre 
-            FROM comentarios c
-            LEFT JOIN obras o ON c.obra_id = o.id
-            ORDER BY c.id DESC
-        `);
-        res.json(comentarios);
-    } catch (error1) {
-        try {
-            const [comentariosSimples] = await pool.query('SELECT * FROM comentarios ORDER BY id DESC');
-            res.json(comentariosSimples);
-        } catch (error2) {
-            console.error('Error al obtener comentarios:', error2);
-            res.json([]);
-        }
+      const [comentariosSimples] = await pool.query('SELECT * FROM comentarios ORDER BY id DESC');
+      res.json(comentariosSimples);
+    } catch (error2) {
+      console.error('Error al obtener comentarios:', error2);
+      res.json([]);
     }
+  }
 });
 
 router.post('/comentarios', async (req, res) => {
-    try {
-        const { ciudadano, nombre, comentario, texto, obra_id } = req.body;
-        const autor = ciudadano || nombre || 'Anónimo';
-        const mensaje = comentario || texto || '';
-        const idObra = obra_id ? obra_id : null;
+  try {
+    const { ciudadano, nombre, comentario, texto, obra_id } = req.body;
+    const autor = (ciudadano || nombre || 'Anónimo').trim();
+    const mensaje = (comentario || texto || '').trim();
+    const idObra = obra_id ? obra_id : null;
 
-        try {
-            const [resultado] = await pool.query(
-                'INSERT INTO comentarios (ciudadano, comentario, obra_id, fecha) VALUES (?, ?, ?, NOW())',
-                [autor, mensaje, idObra]
-            );
-            return res.status(201).json({ mensaje: 'Comentario guardado', id: resultado.insertId });
-        } catch (e1) {
-            try {
-                const [resultado] = await pool.query(
-                    'INSERT INTO comentarios (nombre, texto) VALUES (?, ?)',
-                    [autor, mensaje]
-                );
-                return res.status(201).json({ mensaje: 'Comentario guardado', id: resultado.insertId });
-            } catch (e2) {
-                const [resultado] = await pool.query(
-                    'INSERT INTO comentarios (ciudadano, comentario) VALUES (?, ?)',
-                    [autor, mensaje]
-                );
-                return res.status(201).json({ mensaje: 'Comentario guardado', id: resultado.insertId });
-            }
-        }
-    } catch (error) {
-        console.error('Error al guardar comentario:', error);
-        res.status(500).json({ error: 'Error al guardar el comentario' });
+    if (!mensaje) {
+      return res.status(400).json({ error: 'El comentario no puede estar vacío.' });
     }
+
+    const [resultado] = await pool.query(
+      'INSERT INTO comentarios (ciudadano, comentario, obra_id) VALUES (?, ?, ?)',
+      [autor, mensaje, idObra]
+    );
+
+    return res.status(201).json({ mensaje: 'Comentario guardado', id: resultado.insertId });
+  } catch (error) {
+    console.error('Error real de MySQL al guardar comentario:', error);
+    res.status(500).json({
+      error: 'Error al guardar el comentario',
+      detalle: error.sqlMessage || error.message
+    });
+  }
 });
 
 router.delete('/comentarios/:id', async (req, res) => {
-    const { id } = req.params;
-    try {
-        const [resultado] = await pool.query('DELETE FROM comentarios WHERE id = ?', [id]);
-        if (resultado.affectedRows === 0) {
-            return res.status(404).json({ mensaje: 'Comentario no encontrado' });
-        }
-        res.json({ mensaje: 'Comentario eliminado correctamente' });
-    } catch (error) {
-        console.error('Error al eliminar comentario:', error);
-        res.status(500).json({ mensaje: 'Error al eliminar el comentario' });
+  const { id } = req.params;
+  try {
+    const [resultado] = await pool.query('DELETE FROM comentarios WHERE id = ?', [id]);
+    if (resultado.affectedRows === 0) {
+      return res.status(404).json({ mensaje: 'Comentario no encontrado' });
     }
+    res.json({ mensaje: 'Comentario eliminado correctamente' });
+  } catch (error) {
+    console.error('Error al eliminar comentario:', error);
+    res.status(500).json({ mensaje: 'Error al eliminar el comentario' });
+  }
 });
 
 export default router;
