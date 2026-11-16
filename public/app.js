@@ -25,7 +25,7 @@ async function obtenerObrasPublicas() {
         tablaBody.innerHTML = '';
 
         if (obras.length === 0) {
-            tablaBody.innerHTML = `<tr><td colspan="5" style="text-align: center;">No hay obras registradas actualmente.</td></tr>`;
+            tablaBody.innerHTML = `<tr><td colspan="7" style="text-align: center;">No hay obras registradas actualmente.</td></tr>`;
             return;
         }
 
@@ -34,9 +34,13 @@ async function obtenerObrasPublicas() {
             fila.style.cursor = 'pointer'; 
             
             const brutoPorcentaje = obra.avance_porcentaje !== undefined && obra.avance_porcentaje !== null ? obra.avance_porcentaje : 
-                                   (obra.porcentaje !== undefined && obra.porcentaje !== null ? obra.porcentaje : 
-                                   (obra.avance !== undefined && obra.avance !== null ? obra.avance : 0));
+                                     (obra.porcentaje !== undefined && obra.porcentaje !== null ? obra.porcentaje : 
+                                     (obra.avance !== undefined && obra.avance !== null ? obra.avance : 0));
             const porcentajeVal = brutoPorcentaje !== '' ? brutoPorcentaje : 0;
+
+            // Formatear fechas de manera segura
+            const fechaInicio = obra.fecha_inicio ? new Date(obra.fecha_inicio).toLocaleDateString() : 'N/D';
+            const fechaFin = obra.fecha_fin ? new Date(obra.fecha_fin).toLocaleDateString() : 'N/D';
 
             fila.innerHTML = `
                 <td>${obra.nombre}</td>
@@ -49,6 +53,8 @@ async function obtenerObrasPublicas() {
                         <span>${porcentajeVal}%</span>
                     </div>
                 </td>
+                <td style="color: #475569; font-size: 0.9rem;">${fechaInicio}</td>
+                <td style="color: #475569; font-size: 0.9rem;">${fechaFin}</td>
             `;
             
             fila.addEventListener('click', () => {
@@ -66,7 +72,7 @@ async function obtenerObrasPublicas() {
         console.error('Error:', error);
         const tablaBody = document.getElementById('tablaObrasBody');
         if (tablaBody) {
-            tablaBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red;">Error al cargar la información. Intente más tarde.</td></tr>`;
+            tablaBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: red;">Error al cargar la información. Intente más tarde.</td></tr>`;
         }
     }
 }
@@ -120,8 +126,8 @@ async function cargarMarcadoresEnMapa(map) {
             const lng = obra.longitud ? parseFloat(obra.longitud) : -75.8369;
 
             const brutoPorcentaje = obra.avance_porcentaje !== undefined && obra.avance_porcentaje !== null ? obra.avance_porcentaje : 
-                                   (obra.porcentaje !== undefined && obra.porcentaje !== null ? obra.porcentaje : 
-                                   (obra.avance !== undefined && obra.avance !== null ? obra.avance : 0));
+                                     (obra.porcentaje !== undefined && obra.porcentaje !== null ? obra.porcentaje : 
+                                     (obra.avance !== undefined && obra.avance !== null ? obra.avance : 0));
             const porcentajeVal = brutoPorcentaje !== '' ? brutoPorcentaje : 0;
 
             const colorPin = obtenerColorPorEstado(obra.estado, porcentajeVal);
