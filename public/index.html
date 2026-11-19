@@ -34,6 +34,39 @@
     </ul>
   </nav>
 
+  <!-- Botón y Panel de Accesibilidad Visual -->
+  <div class="acc-toolbar" aria-label="Opciones de accesibilidad">
+    <button
+      type="button"
+      id="btnAccMenu"
+      class="acc-main-btn"
+      aria-expanded="false"
+      aria-controls="accMenuPanel"
+      onclick="toggleAccMenu()"
+    >
+      Accesibilidad
+    </button>
+
+    <div id="accMenuPanel" class="acc-panel" hidden>
+      <span class="acc-label">Visión y contraste</span>
+      <button type="button" data-modo="normal" onclick="setModoAccesibilidad('normal')">
+        Vista normal
+      </button>
+      <button type="button" data-modo="deuteranopia" onclick="setModoAccesibilidad('deuteranopia')">
+        Daltonismo verde (Deuteranopia)
+      </button>
+      <button type="button" data-modo="protanopia" onclick="setModoAccesibilidad('protanopia')">
+        Daltonismo rojo (Protanopia)
+      </button>
+      <button type="button" data-modo="tritanopia" onclick="setModoAccesibilidad('tritanopia')">
+        Daltonismo azul (Tritanopia)
+      </button>
+      <button type="button" data-modo="contraste" onclick="setModoAccesibilidad('contraste')">
+        Alto contraste
+      </button>
+    </div>
+  </div>
+
   <!-- Banner Principal (Hero con Foto del Puente) -->
   <section id="inicio" class="hero">
     <div class="hero-overlay">
@@ -69,7 +102,6 @@
       </div>
     </div>
   </section>
-  
 
   <!-- Sección: Historia de San Pelayo -->
   <section id="historia" class="section-container bg-light">
@@ -154,9 +186,57 @@
     <p>&copy; 2026 Veeduría Ciudadana de San Pelayo. Todos los derechos reservados.</p>
   </footer>
 
-<!-- Scripts de Leaflet y Aplicación Principal -->
+  <!-- Scripts de Leaflet y Aplicación Principal -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="/app.js"></script>
+
+  <!-- Script de Accesibilidad Visual -->
+  <script>
+    function toggleAccMenu() {
+      const panel = document.getElementById('accMenuPanel');
+      const btn = document.getElementById('btnAccMenu');
+      if (!panel) return;
+
+      const oculto = panel.hasAttribute('hidden');
+      if (oculto) {
+        panel.removeAttribute('hidden');
+        if (btn) btn.setAttribute('aria-expanded', 'true');
+      } else {
+        panel.setAttribute('hidden', '');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      }
+    }
+
+    function setModoAccesibilidad(modo) {
+      const root = document.documentElement;
+      root.classList.remove(
+        'acc-deuteranopia',
+        'acc-protanopia',
+        'acc-tritanopia',
+        'acc-contraste'
+      );
+
+      if (modo && modo !== 'normal') {
+        root.classList.add('acc-' + modo);
+      }
+
+      document.querySelectorAll('#accMenuPanel button[data-modo]').forEach((b) => {
+        b.classList.toggle('activo', b.dataset.modo === modo);
+      });
+
+      try {
+        localStorage.setItem('modoAccesibilidadVeeduria', modo);
+      } catch (e) {}
+    }
+
+    (function cargarModoGuardado() {
+      let guardado = 'normal';
+      try {
+        guardado = localStorage.getItem('modoAccesibilidadVeeduria') || 'normal';
+      } catch (e) {}
+      setModoAccesibilidad(guardado);
+    })();
+  </script>
 
   <script>
     const formComentario = document.getElementById('formComentario');
@@ -177,7 +257,6 @@
           div.style.borderRadius = '6px';
           div.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
           
-          // Validación segura de campos para evitar textos indefinidos
           const autor = c.ciudadano || c.nombre || 'Anónimo';
           const texto = c.comentario || c.texto || '';
           const fechaStr = c.fecha ? new Date(c.fecha).toLocaleDateString() : '';
@@ -202,7 +281,6 @@
       const comentario = document.getElementById('textoComentario').value;
 
       try {
-        
         const respuesta = await fetch('/obras/comentarios', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
