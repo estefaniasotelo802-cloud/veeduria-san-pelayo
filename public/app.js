@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     inicializarMenuMovilYAnimaciones();
     inicializarAccesibilidad();
     inicializarGaleria();
+    iniciarRotacionHero();
 });
 
 // Variables globales para sincronizar tabla y mapa
@@ -621,4 +622,52 @@ function inicializarGaleria() {
     });
 
     renderizarTarjetas('todas');
+}
+
+// 9. ROTACIÓN AUTOMÁTICA DEL HERO (#inicio)
+
+async function iniciarRotacionHero(intervaloMs = 7000) {
+    const hero = document.querySelector('#inicio.hero');
+    if (!hero) return;
+
+    let listaHero = [];
+
+    try {
+        const resp = await fetch('/api/hero-imagenes');
+        if (resp.ok) {
+            const data = await resp.json();
+            if (Array.isArray(data.imagenes)) {
+                listaHero = data.imagenes.map(item => item.url_imagen).filter(Boolean);
+            }
+        }
+    } catch (error) {
+        console.warn('No se pudieron cargar imágenes dinámicas del hero:', error);
+    }
+
+    if (listaHero.length === 0) {
+        listaHero = [
+            '/hero/templo-san-pelayo.jpg',
+            '/hero/palacio-porro.jpg',
+            '/hero/bailarina-festival.jpg',
+            '/hero/pescador-sinu.jpg'
+        ];
+    }
+
+    let indice = 0;
+
+    const aplicarFondo = (ruta) => {
+        hero.style.backgroundImage = `linear-gradient(rgba(15, 23, 42, 0.55), rgba(15, 23, 42, 0.55)), url("${ruta}")`;
+        hero.style.backgroundSize = 'cover';
+        hero.style.backgroundPosition = 'center';
+        hero.style.transition = 'background-image 0.7s ease-in-out';
+    };
+
+    aplicarFondo(listaHero[indice]);
+
+    if (listaHero.length > 1) {
+        setInterval(() => {
+            indice = (indice + 1) % listaHero.length;
+            aplicarFondo(listaHero[indice]);
+        }, intervaloMs);
+    }
 }
