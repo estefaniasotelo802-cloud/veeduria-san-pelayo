@@ -991,15 +991,19 @@ body.admin-body {
 }
 
 .acc-main-btn {
+  width: 40px;
+  height: 40px;
   background-color: #0f172a;
   color: #ffffff;
   border: 1.5px solid #ffffff;
-  border-radius: 20px;
-  padding: 6px 13px;
-  font-size: 0.8rem;
-  font-weight: 700;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
 .acc-panel {

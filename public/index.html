@@ -15,6 +15,9 @@
 </head>
 <body>
 
+  <!-- Enlace rápido para lectores de pantalla -->
+  <a href="#objetivo" class="skip-link">Saltar al contenido principal</a>
+
   <!-- Barra Superior de Información -->
   <div class="top-bar">
     <span>Red de Veedurías Ciudadanas de Colombia | Municipio de San Pelayo, Córdoba</span>
@@ -34,7 +37,7 @@
     </ul>
   </nav>
 
-  <!-- Botón y Panel de Accesibilidad Visual -->
+  <!-- Botón y Panel de Accesibilidad Integral -->
   <div class="acc-toolbar" aria-label="Opciones de accesibilidad">
     <button
       type="button"
@@ -42,13 +45,61 @@
       class="acc-main-btn"
       aria-expanded="false"
       aria-controls="accMenuPanel"
+      aria-label="Opciones de accesibilidad"
+      title="Accesibilidad"
       onclick="toggleAccMenu()"
     >
-      Accesibilidad
+      <svg
+        class="acc-icon"
+        viewBox="0 0 24 24"
+        width="22"
+        height="22"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="4.5" r="1.75" fill="currentColor" stroke="none" />
+        <path d="M5.5 8.5h13" />
+        <path d="M12 8.5v5.5" />
+        <path d="M12 14l-3.2 6" />
+        <path d="M12 14l3.2 6" />
+      </svg>
     </button>
 
     <div id="accMenuPanel" class="acc-panel" hidden>
-      <span class="acc-label">Visión y contraste</span>
+      <!-- 1. Lectura en voz alta (Personas ciegas / baja visión) -->
+      <span class="acc-label">Lectura en voz alta</span>
+      <div class="acc-row">
+        <button type="button" id="btnLeerPagina" onclick="leerPaginaEnVozAlta()">
+          Escuchar página
+        </button>
+        <button type="button" onclick="detenerLectura()">
+          Detener
+        </button>
+      </div>
+
+      <!-- 2. Tamaño de letra (Baja visión / adultos mayores) -->
+      <span class="acc-label">Tamaño de texto</span>
+      <div class="acc-row">
+        <button type="button" onclick="cambiarTamanoTexto(-10)" aria-label="Disminuir letra">A-</button>
+        <button type="button" onclick="cambiarTamanoTexto(0)" aria-label="Letra normal">100%</button>
+        <button type="button" onclick="cambiarTamanoTexto(10)" aria-label="Aumentar letra">A+</button>
+      </div>
+
+      <!-- 3. Lectura y navegación (Dislexia / teclado) -->
+      <span class="acc-label">Lectura y navegación</span>
+      <button type="button" id="btnLecturaFacil" onclick="toggleOpcionExtra('acc-lectura-facil', 'btnLecturaFacil')">
+        Espaciado para dislexia
+      </button>
+      <button type="button" id="btnResaltarEnlaces" onclick="toggleOpcionExtra('acc-resaltar-enlaces', 'btnResaltarEnlaces')">
+        Resaltar botones y enlaces
+      </button>
+
+      <!-- 4. Visión y color (Daltonismo y contraste) -->
+      <span class="acc-label">Visión y color</span>
       <button type="button" data-modo="normal" onclick="setModoAccesibilidad('normal')">
         Vista normal
       </button>
@@ -190,7 +241,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="/app.js"></script>
 
-  <!-- Script de Accesibilidad Visual -->
+  <!-- Script de Accesibilidad Integral -->
   <script>
     function toggleAccMenu() {
       const panel = document.getElementById('accMenuPanel');
@@ -205,6 +256,53 @@
         panel.setAttribute('hidden', '');
         if (btn) btn.setAttribute('aria-expanded', 'false');
       }
+    }
+
+    function leerPaginaEnVozAlta() {
+      if (!('speechSynthesis' in window)) {
+        alert('Tu navegador no soporta lectura en voz alta.');
+        return;
+      }
+      window.speechSynthesis.cancel();
+
+      const textoSeleccionado = window.getSelection().toString().trim();
+      const secciones = ['inicio', 'objetivo', 'historia', 'comentarios', 'veeduria']
+        .map(id => document.getElementById(id)?.innerText || '')
+        .join('. ');
+
+      const textoALeer = textoSeleccionado || secciones;
+      const mensaje = new SpeechSynthesisUtterance(textoALeer);
+      mensaje.lang = 'es-CO';
+      mensaje.rate = 0.95;
+      window.speechSynthesis.speak(mensaje);
+    }
+
+    function detenerLectura() {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    }
+
+    let zoomTextoActual = 100;
+    function cambiarTamanoTexto(cambio) {
+      if (cambio === 0) {
+        zoomTextoActual = 100;
+      } else {
+        zoomTextoActual = Math.min(140, Math.max(80, zoomTextoActual + cambio));
+      }
+      document.documentElement.style.fontSize = zoomTextoActual + '%';
+      try {
+        localStorage.setItem('veeduriaZoomTexto', zoomTextoActual);
+      } catch (e) {}
+    }
+
+    function toggleOpcionExtra(claseCss, idBoton) {
+      const activo = document.documentElement.classList.toggle(claseCss);
+      const btn = document.getElementById(idBoton);
+      if (btn) btn.classList.toggle('activo', activo);
+      try {
+        localStorage.setItem('veeduria_' + claseCss, activo ? '1' : '0');
+      } catch (e) {}
     }
 
     function setModoAccesibilidad(modo) {
@@ -229,15 +327,28 @@
       } catch (e) {}
     }
 
-    (function cargarModoGuardado() {
-      let guardado = 'normal';
+    (function restaurarAccesibilidad() {
       try {
-        guardado = localStorage.getItem('modoAccesibilidadVeeduria') || 'normal';
+        const modo = localStorage.getItem('modoAccesibilidadVeeduria') || 'normal';
+        setModoAccesibilidad(modo);
+
+        const zoom = parseInt(localStorage.getItem('veeduriaZoomTexto'), 10);
+        if (zoom && zoom >= 80 && zoom <= 140) {
+          zoomTextoActual = zoom;
+          document.documentElement.style.fontSize = zoomTextoActual + '%';
+        }
+
+        if (localStorage.getItem('veeduria_acc-lectura-facil') === '1') {
+          toggleOpcionExtra('acc-lectura-facil', 'btnLecturaFacil');
+        }
+        if (localStorage.getItem('veeduria_acc-resaltar-enlaces') === '1') {
+          toggleOpcionExtra('acc-resaltar-enlaces', 'btnResaltarEnlaces');
+        }
       } catch (e) {}
-      setModoAccesibilidad(guardado);
     })();
   </script>
 
+  <!-- Script de Comentarios Ciudadanos -->
   <script>
     const formComentario = document.getElementById('formComentario');
     const listaComentarios = document.getElementById('listaComentarios');
