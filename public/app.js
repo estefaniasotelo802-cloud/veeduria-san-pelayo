@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     inicializarFormularioComentarios();
     inicializarMenuMovilYAnimaciones();
     inicializarAccesibilidad();
+    inicializarGaleria();
 });
 
 // Variables globales para sincronizar tabla y mapa
@@ -569,7 +570,21 @@ function inicializarGaleria() {
                 </div>
             `;
 
-            card.addEventListener('click', () => abrirFotoModal(foto));
+            card.addEventListener('mouseenter', () => {
+                grid.querySelectorAll('.galeria-card').forEach(c => c.classList.remove('activa'));
+                card.classList.add('activa');
+            });
+
+            card.addEventListener('click', () => {
+                const yaActiva = card.classList.contains('activa');
+                grid.querySelectorAll('.galeria-card').forEach(c => c.classList.remove('activa'));
+                if (!yaActiva) {
+                    card.classList.add('activa');
+                } else {
+                    abrirFotoModal(foto);
+                }
+            });
+
             card.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();

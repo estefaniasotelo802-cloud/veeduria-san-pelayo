@@ -1068,21 +1068,22 @@ html.acc-contraste {
 .galeria-filtros {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   justify-content: center;
-  margin-bottom: 22px;
+  margin-bottom: 24px;
 }
 
 .filtro-btn {
-  padding: 8px 14px;
+  width: auto;
+  padding: 8px 18px;
   border-radius: 999px;
   border: 1px solid #cbd5e1;
   background-color: #ffffff;
   color: #334155;
   font-weight: 600;
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
 }
 
 .filtro-btn:hover,
@@ -1092,61 +1093,147 @@ html.acc-contraste {
   border-color: transparent;
 }
 
+/* Galería tipo acordeón horizontal */
 .galeria-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 18px;
+  display: flex;
+  gap: 12px;
+  height: 360px;
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 6px;
 }
 
 .galeria-card {
-  background: #ffffff;
-  border-radius: 12px;
+  position: relative;
+  flex: 1 1 0;
+  min-width: 95px;
+  height: 100%;
+  border-radius: 16px;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.14);
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  display: flex;
-  flex-direction: column;
-}
-
-.galeria-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  transition: flex 0.45s cubic-bezier(0.22, 1, 0.36, 1), transform 0.3s ease, box-shadow 0.3s ease;
+  background: #0f172a;
 }
 
 .galeria-card img {
   width: 100%;
-  height: 195px;
+  height: 100%;
   object-fit: cover;
   display: block;
+  transition: transform 0.45s ease, filter 0.3s ease;
+}
+
+.galeria-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(15, 23, 42, 0.88) 0%,
+    rgba(15, 23, 42, 0.22) 55%,
+    rgba(15, 23, 42, 0.05) 100%
+  );
+  pointer-events: none;
 }
 
 .galeria-card-body {
-  padding: 12px 14px;
+  position: relative;
+  z-index: 2;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 14px 16px;
+  color: #ffffff;
+  opacity: 0.92;
+  transition: opacity 0.25s ease;
 }
 
 .galeria-tag {
   display: inline-block;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  color: #0284c7;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
-  margin-bottom: 4px;
+  background: rgba(8, 175, 230, 0.9);
+  color: #ffffff;
+  padding: 3px 8px;
+  border-radius: 999px;
+  margin-bottom: 6px;
 }
 
 .galeria-card-body h3 {
-  margin: 0 0 6px 0;
+  margin: 0 0 4px 0;
   font-size: 1rem;
-  color: #0f172a;
+  color: #ffffff;
+  line-height: 1.25;
 }
 
 .galeria-card-body p {
   margin: 0;
-  font-size: 0.88rem;
-  color: #475569;
+  font-size: 0.84rem;
+  color: #e2e8f0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  opacity: 0;
+  max-height: 0;
+  transition: opacity 0.3s ease, max-height 0.35s ease;
 }
 
+/* Al pasar el mouse, tocar o enfocar: sobresale y expande un poco */
+.galeria-card:hover,
+.galeria-card:focus-visible,
+.galeria-card.activa {
+  flex: 2.8 1 0;
+  transform: translateY(-4px);
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.24);
+}
+
+.galeria-card:hover img,
+.galeria-card:focus-visible img,
+.galeria-card.activa img {
+  transform: scale(1.04);
+}
+
+.galeria-card:hover .galeria-card-body p,
+.galeria-card:focus-visible .galeria-card-body p,
+.galeria-card.activa .galeria-card-body p {
+  opacity: 1;
+  max-height: 70px;
+}
+
+/* En pantallas pequeñas se adapta en columna para que sea cómodo tocar */
+@media (max-width: 768px) {
+  .galeria-grid {
+    flex-direction: column;
+    height: auto;
+    overflow-x: visible;
+  }
+
+  .galeria-card {
+    flex: none;
+    min-width: 100%;
+    height: 185px;
+  }
+
+  .galeria-card:hover,
+  .galeria-card:focus-visible,
+  .galeria-card.activa {
+    flex: none;
+    height: 250px;
+  }
+
+  .galeria-card-body p {
+    opacity: 1;
+    max-height: 70px;
+  }
+}
+
+/* Modal / Visor Ampliado */
 .galeria-modal {
   position: fixed;
   inset: 0;
