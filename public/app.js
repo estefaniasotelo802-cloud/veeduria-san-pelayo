@@ -2,14 +2,16 @@ document.addEventListener('DOMContentLoaded', () => {
     obtenerObrasPublicas();
     inicializarMapa();
     inicializarChatbot();
-    cargarComentariosPublicos(); 
-    inicializarFormularioComentarios(); 
+    cargarComentariosPublicos();
+    inicializarFormularioComentarios();
     inicializarMenuMovilYAnimaciones();
+    inicializarAccesibilidad();
 });
 
 // Variables globales para sincronizar tabla y mapa
 let mapaGlobal = null;
 const marcadoresObras = {};
+let zoomTextoActual = 100;
 
 // 1. GESTIÓN DE LA TABLA PÚBLICA
 
@@ -41,7 +43,6 @@ async function obtenerObrasPublicas() {
                                    (obra.avance !== undefined && obra.avance !== null ? obra.avance : 0));
             const porcentajeVal = brutoPorcentaje !== '' ? brutoPorcentaje : 0;
 
-            // Formatear fechas de manera segura
             const fechaInicio = obra.fecha_inicio ? new Date(obra.fecha_inicio).toLocaleDateString() : 'N/D';
             const fechaFin = obra.fecha_fin ? new Date(obra.fecha_fin).toLocaleDateString() : 'N/D';
 
@@ -109,12 +110,12 @@ function inicializarMapa() {
 
 function obtenerColorPorEstado(estado, porcentaje) {
     if (porcentaje >= 100 || (estado && estado.toLowerCase().includes('completado'))) {
-        return '#2ecc71'; // Verde (Completado)
+        return '#2ecc71';
     }
     if (estado && (estado.toLowerCase().includes('proceso') || estado.toLowerCase().includes('ejecución'))) {
-        return '#f39c12'; // Naranja (En proceso)
+        return '#f39c12';
     }
-    return '#e74c3c'; // Rojo (Pendiente)
+    return '#e74c3c';
 }
 
 async function cargarMarcadoresEnMapa(map) {
@@ -200,6 +201,7 @@ async function cargarComentariosPublicos() {
             const iniciales = obtenerIniciales(autor);
             const textoComentario = c.comentario || c.texto || '';
             const fechaFormateada = c.fecha ? new Date(c.fecha).toLocaleDateString() : 'Reciente';
+            const obraInfo = c.obra_nombre ? `<div style="font-size: 12px; color: #0284c7; margin-top: 2px;">Obra: ${c.obra_nombre}</div>` : '';
 
             const divComentario = document.createElement('div');
             divComentario.className = 'comentario-item';
@@ -210,6 +212,7 @@ async function cargarComentariosPublicos() {
                         <span class="comentario-autor">${autor}</span>
                         <span class="comentario-fecha">${fechaFormateada}</span>
                     </div>
+                    ${obraInfo}
                     <p class="comentario-texto">${textoComentario}</p>
                 </div>
             `;
@@ -222,6 +225,7 @@ async function cargarComentariosPublicos() {
 }
 
 // 4. ENVÍO DE NUEVOS COMENTARIOS (POST)
+
 function inicializarFormularioComentarios() {
     const form = document.getElementById('formComentario') || document.querySelector('form');
     if (!form) return;
@@ -229,8 +233,8 @@ function inicializarFormularioComentarios() {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const inputNombre = document.querySelector('input[name="ciudadano"]') || document.querySelector('input[type="text"]');
-        const inputTexto = document.querySelector('textarea');
+        const inputNombre = document.getElementById('nombreUsuario') || document.querySelector('input[name="ciudadano"]') || document.querySelector('input[type="text"]');
+        const inputTexto = document.getElementById('textoComentario') || document.querySelector('textarea');
 
         if (!inputNombre || !inputTexto) return;
 
@@ -333,6 +337,7 @@ function inicializarChatbot() {
 }
 
 // 6. MENÚ MÓVIL Y ANIMACIONES SCROLL REVEAL
+
 function inicializarMenuMovilYAnimaciones() {
     const toggleBtn = document.getElementById('mobile-menu');
     const navMenu = document.getElementById('nav-links-menu');
@@ -342,13 +347,11 @@ function inicializarMenuMovilYAnimaciones() {
             navMenu.classList.toggle('active');
         });
         
-        // Cerrar menú al hacer clic en un enlace de navegación
         navMenu.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', () => navMenu.classList.remove('active'));
         });
     }
 
-    // Observer para animaciones de aparición al hacer scroll
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -360,4 +363,109 @@ function inicializarMenuMovilYAnimaciones() {
     document.querySelectorAll('.section-container').forEach(sec => {
         observer.observe(sec);
     });
+}
+
+// 7. ACCESIBILIDAD INTEGRAL
+
+function toggleAccMenu() {
+    const panel = document.getElementById('accMenuPanel');
+    const btn = document.getElementById('btnAccMenu');
+    if (!panel) return;
+
+    const oculto = panel.hasAttribute('hidden');
+    if (oculto) {
+        panel.removeAttribute('hidden');
+        if (btn) btn.setAttribute('aria-expanded', 'true');
+    } else {
+        panel.setAttribute('hidden', '');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+    }
+}
+
+function leerPaginaEnVozAlta() {
+    if (!('speechSynthesis' in window)) {
+        alert('Tu navegador no soporta lectura en voz alta.');
+        return;
+    }
+    window.speechSynthesis.cancel();
+
+    const textoSeleccionado = window.getSelection().toString().trim();
+    const secciones = ['inicio', 'objetivo', 'historia', 'comentarios', 'veeduria']
+        .map(id => document.getElementById(id)?.innerText || '')
+        .join('. ');
+
+    const textoALeer = textoSeleccionado || secciones;
+    const mensaje = new SpeechSynthesisUtterance(textoALeer);
+    mensaje.lang = 'es-CO';
+    mensaje.rate = 0.95;
+    window.speechSynthesis.speak(mensaje);
+}
+
+function detenerLectura() {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+    }
+}
+
+function cambiarTamanoTexto(cambio) {
+    if (cambio === 0) {
+        zoomTextoActual = 100;
+    } else {
+        zoomTextoActual = Math.min(140, Math.max(80, zoomTextoActual + cambio));
+    }
+    document.documentElement.style.fontSize = zoomTextoActual + '%';
+    try {
+        localStorage.setItem('veeduriaZoomTexto', zoomTextoActual);
+    } catch (e) {}
+}
+
+function toggleOpcionExtra(claseCss, idBoton) {
+    const activo = document.documentElement.classList.toggle(claseCss);
+    const btn = document.getElementById(idBoton);
+    if (btn) btn.classList.toggle('activo', activo);
+    try {
+        localStorage.setItem('veeduria_' + claseCss, activo ? '1' : '0');
+    } catch (e) {}
+}
+
+function setModoAccesibilidad(modo) {
+    const modoValido = modo || 'normal';
+    const root = document.documentElement;
+    root.classList.remove(
+        'acc-deuteranopia',
+        'acc-protanopia',
+        'acc-tritanopia',
+        'acc-contraste'
+    );
+
+    if (modoValido !== 'normal') {
+        root.classList.add('acc-' + modoValido);
+    }
+
+    const selector = document.querySelector('#accMenuPanel .acc-select');
+    if (selector) selector.value = modoValido;
+
+    try {
+        localStorage.setItem('modoAccesibilidadVeeduria', modoValido);
+    } catch (e) {}
+}
+
+function inicializarAccesibilidad() {
+    try {
+        const modo = localStorage.getItem('modoAccesibilidadVeeduria') || 'normal';
+        setModoAccesibilidad(modo);
+
+        const zoom = parseInt(localStorage.getItem('veeduriaZoomTexto'), 10);
+        if (zoom && zoom >= 80 && zoom <= 140) {
+            zoomTextoActual = zoom;
+            document.documentElement.style.fontSize = zoomTextoActual + '%';
+        }
+
+        if (localStorage.getItem('veeduria_acc-lectura-facil') === '1') {
+            toggleOpcionExtra('acc-lectura-facil', 'btnLecturaFacil');
+        }
+        if (localStorage.getItem('veeduria_acc-resaltar-enlaces') === '1') {
+            toggleOpcionExtra('acc-resaltar-enlaces', 'btnResaltarEnlaces');
+        }
+    } catch (e) {}
 }
