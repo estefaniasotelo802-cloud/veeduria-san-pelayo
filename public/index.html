@@ -15,9 +15,6 @@
 </head>
 <body>
 
-  <!-- Enlace rápido para lectores de pantalla -->
-  <a href="#objetivo" class="skip-link">Saltar al contenido principal</a>
-
   <!-- Barra Superior de Información -->
   <div class="top-bar">
     <span>Red de Veedurías Ciudadanas de Colombia | Municipio de San Pelayo, Córdoba</span>
@@ -37,7 +34,7 @@
     </ul>
   </nav>
 
-  <!-- Botón y Panel de Accesibilidad Integral -->
+  <!-- Botón y Panel de Accesibilidad Resumido -->
   <div class="acc-toolbar" aria-label="Opciones de accesibilidad">
     <button
       type="button"
@@ -70,51 +67,35 @@
     </button>
 
     <div id="accMenuPanel" class="acc-panel" hidden>
-      <!-- 1. Lectura en voz alta (Personas ciegas / baja visión) -->
-      <span class="acc-label">Lectura en voz alta</span>
       <div class="acc-row">
-        <button type="button" id="btnLeerPagina" onclick="leerPaginaEnVozAlta()">
-          Escuchar página
-        </button>
-        <button type="button" onclick="detenerLectura()">
-          Detener
-        </button>
+        <button type="button" onclick="leerPaginaEnVozAlta()">Leer voz</button>
+        <button type="button" onclick="detenerLectura()">Parar voz</button>
       </div>
 
-      <!-- 2. Tamaño de letra (Baja visión / adultos mayores) -->
-      <span class="acc-label">Tamaño de texto</span>
       <div class="acc-row">
         <button type="button" onclick="cambiarTamanoTexto(-10)" aria-label="Disminuir letra">A-</button>
-        <button type="button" onclick="cambiarTamanoTexto(0)" aria-label="Letra normal">100%</button>
+        <button type="button" onclick="cambiarTamanoTexto(0)" aria-label="Letra normal">A</button>
         <button type="button" onclick="cambiarTamanoTexto(10)" aria-label="Aumentar letra">A+</button>
       </div>
 
-      <!-- 3. Lectura y navegación (Dislexia / teclado) -->
-      <span class="acc-label">Lectura y navegación</span>
       <button type="button" id="btnLecturaFacil" onclick="toggleOpcionExtra('acc-lectura-facil', 'btnLecturaFacil')">
-        Espaciado para dislexia
+        Lectura fácil (dislexia)
       </button>
       <button type="button" id="btnResaltarEnlaces" onclick="toggleOpcionExtra('acc-resaltar-enlaces', 'btnResaltarEnlaces')">
-        Resaltar botones y enlaces
+        Resaltar enlaces
       </button>
 
-      <!-- 4. Visión y color (Daltonismo y contraste) -->
-      <span class="acc-label">Visión y color</span>
-      <button type="button" data-modo="normal" onclick="setModoAccesibilidad('normal')">
-        Vista normal
-      </button>
-      <button type="button" data-modo="deuteranopia" onclick="setModoAccesibilidad('deuteranopia')">
-        Daltonismo verde (Deuteranopia)
-      </button>
-      <button type="button" data-modo="protanopia" onclick="setModoAccesibilidad('protanopia')">
-        Daltonismo rojo (Protanopia)
-      </button>
-      <button type="button" data-modo="tritanopia" onclick="setModoAccesibilidad('tritanopia')">
-        Daltonismo azul (Tritanopia)
-      </button>
-      <button type="button" data-modo="contraste" onclick="setModoAccesibilidad('contraste')">
-        Alto contraste
-      </button>
+      <select
+        aria-label="Modo de color y contraste"
+        class="acc-select"
+        onchange="setModoAccesibilidad(this.value)"
+      >
+        <option value="normal">Color: Normal</option>
+        <option value="deuteranopia">Daltonismo: Verde</option>
+        <option value="protanopia">Daltonismo: Rojo</option>
+        <option value="tritanopia">Daltonismo: Azul</option>
+        <option value="contraste">Alto contraste</option>
+      </select>
     </div>
   </div>
 
@@ -241,6 +222,5 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="/app.js"></script>
 
-  
 </body>
 </html>
