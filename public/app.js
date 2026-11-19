@@ -469,3 +469,141 @@ function inicializarAccesibilidad() {
         }
     } catch (e) {}
 }
+
+// 8. GALERÍA INTERACTIVA DE SAN PELAYO
+
+const FOTOS_GALERIA_SAN_PELAYO = [
+    {
+        id: 'puente-sinu',
+        titulo: 'Puente Metálico sobre el Río Sinú',
+        categoria: 'infraestructura',
+        etiqueta: 'Infraestructura y Río',
+        imagen: '/galeria/puente-sinu.jpg',
+        descripcion: 'Ícono de conectividad y movilidad que enlaza a San Pelayo con el resto de Córdoba.'
+    },
+    {
+        id: 'planchon-sinu',
+        titulo: 'Cruce Fluvial en el Río Sinú',
+        categoria: 'infraestructura',
+        etiqueta: 'Infraestructura y Río',
+        imagen: '/galeria/planchon-sinu.jpg',
+        descripcion: 'Transporte tradicional sobre el río Sinú que acompaña la vida cotidiana y productiva ribereña.'
+    },
+    {
+        id: 'monumento-porro',
+        titulo: 'Monumento a los Instrumentos del Porro',
+        categoria: 'cultura',
+        etiqueta: 'Cultura y Porro',
+        imagen: '/galeria/monumento-porro.jpg',
+        descripcion: 'Homenaje a las bandas y ritmos tradicionales que hacen de San Pelayo cuna del porro.'
+    },
+    {
+        id: 'danza-porro',
+        titulo: 'Danza y Tradición Folclórica',
+        categoria: 'cultura',
+        etiqueta: 'Cultura y Porro',
+        imagen: '/galeria/danza-porro.jpg',
+        descripcion: 'Expresión cultural con trajes coloridos y percusión que mantiene viva la identidad local.'
+    },
+    {
+        id: 'plaza-sombreros',
+        titulo: 'Plaza y Monumentos con Sombrero Vueltiao',
+        categoria: 'espacio',
+        etiqueta: 'Espacio Público',
+        imagen: '/galeria/plaza-sombreros.jpg',
+        descripcion: 'Entorno urbano central donde confluyen símbolos artesanales, música y encuentro ciudadano.'
+    },
+    {
+        id: 'fuente-monumento',
+        titulo: 'Fuente y Monumento Tradicional',
+        categoria: 'espacio',
+        etiqueta: 'Espacio Público',
+        imagen: '/galeria/fuente-monumento.jpg',
+        descripcion: 'Espacio comunitario y memoria local dentro del recorrido urbano de San Pelayo.'
+    }
+];
+
+function inicializarGaleria() {
+    const grid = document.getElementById('gridGaleria');
+    const botonesFiltro = document.querySelectorAll('.filtro-btn');
+    const modal = document.getElementById('modalGaleria');
+    const cerrarModal = document.getElementById('cerrarModalGaleria');
+
+    if (!grid) return;
+
+    function abrirFotoModal(foto) {
+        if (!modal) return;
+        document.getElementById('modalImagen').src = foto.imagen;
+        document.getElementById('modalImagen').alt = foto.titulo;
+        document.getElementById('modalCategoria').textContent = foto.etiqueta;
+        document.getElementById('modalTitulo').textContent = foto.titulo;
+        document.getElementById('modalDescripcion').textContent = foto.descripcion;
+        modal.removeAttribute('hidden');
+    }
+
+    function cerrarFotoModal() {
+        if (!modal) return;
+        modal.setAttribute('hidden', '');
+    }
+
+    function renderizarTarjetas(categoria = 'todas') {
+        const filtradas = categoria === 'todas'
+            ? FOTOS_GALERIA_SAN_PELAYO
+            : FOTOS_GALERIA_SAN_PELAYO.filter(item => item.categoria === categoria);
+
+        grid.innerHTML = '';
+
+        filtradas.forEach(foto => {
+            const card = document.createElement('article');
+            card.className = 'galeria-card';
+            card.tabIndex = 0;
+            card.setAttribute('role', 'button');
+            card.setAttribute('aria-label', `Ver ${foto.titulo}`);
+
+            card.innerHTML = `
+                <img src="${foto.imagen}" alt="${foto.titulo}" loading="lazy">
+                <div class="galeria-card-body">
+                    <span class="galeria-tag">${foto.etiqueta}</span>
+                    <h3>${foto.titulo}</h3>
+                    <p>${foto.descripcion}</p>
+                </div>
+            `;
+
+            card.addEventListener('click', () => abrirFotoModal(foto));
+            card.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    abrirFotoModal(foto);
+                }
+            });
+
+            grid.appendChild(card);
+        });
+    }
+
+    botonesFiltro.forEach(btn => {
+        btn.addEventListener('click', () => {
+            botonesFiltro.forEach(b => b.classList.remove('activo'));
+            btn.classList.add('activo');
+            renderizarTarjetas(btn.dataset.categoria);
+        });
+    });
+
+    if (cerrarModal) {
+        cerrarModal.addEventListener('click', cerrarFotoModal);
+    }
+
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) cerrarFotoModal();
+        });
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal && !modal.hasAttribute('hidden')) {
+            cerrarFotoModal();
+        }
+    });
+
+    renderizarTarjetas('todas');
+}

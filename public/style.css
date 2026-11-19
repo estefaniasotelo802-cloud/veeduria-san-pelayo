@@ -1064,3 +1064,136 @@ html.acc-tritanopia {
 html.acc-contraste {
   filter: contrast(1.35) saturate(1.1);
 }
+
+.galeria-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 22px;
+}
+
+.filtro-btn {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #334155;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filtro-btn:hover,
+.filtro-btn.activo {
+  background: linear-gradient(135deg, #508C46, #08AFE6);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.galeria-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+.galeria-card {
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.galeria-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.galeria-card img {
+  width: 100%;
+  height: 195px;
+  object-fit: cover;
+  display: block;
+}
+
+.galeria-card-body {
+  padding: 12px 14px;
+}
+
+.galeria-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #0284c7;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.galeria-card-body h3 {
+  margin: 0 0 6px 0;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.galeria-card-body p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #475569;
+}
+
+.galeria-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 2000;
+}
+
+.galeria-modal[hidden] {
+  display: none;
+}
+
+.galeria-modal-contenido {
+  position: relative;
+  background: #ffffff;
+  border-radius: 14px;
+  max-width: 720px;
+  width: 100%;
+  overflow: hidden;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+}
+
+.galeria-modal-contenido img {
+  width: 100%;
+  max-height: 430px;
+  object-fit: cover;
+  display: block;
+}
+
+.galeria-modal-texto {
+  padding: 16px 20px;
+}
+
+.galeria-cerrar {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(15, 23, 42, 0.75);
+  color: #ffffff;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}

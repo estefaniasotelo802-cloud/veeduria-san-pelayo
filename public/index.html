@@ -145,6 +145,38 @@
     </div>
   </section>
 
+  <!-- Sección: Galería Interactiva de San Pelayo -->
+  <section id="galeria" class="section-container">
+    <h2>Galería Interactiva de San Pelayo</h2>
+    <p class="section-lead">
+      Explora lugares emblemáticos, expresiones culturales y entornos del municipio. Haz clic en cualquier imagen para verla en detalle.
+    </p>
+
+    <div class="galeria-filtros" role="group" aria-label="Filtrar fotos por categoría">
+      <button type="button" class="filtro-btn activo" data-categoria="todas">Todas</button>
+      <button type="button" class="filtro-btn" data-categoria="infraestructura">Infraestructura y Río</button>
+      <button type="button" class="filtro-btn" data-categoria="cultura">Cultura y Porro</button>
+      <button type="button" class="filtro-btn" data-categoria="espacio">Espacio Público</button>
+    </div>
+
+    <div id="gridGaleria" class="galeria-grid">
+      <!-- Las tarjetas se generan dinámicamente desde app.js -->
+    </div>
+
+    <!-- Modal / Visor Ampliado -->
+    <div id="modalGaleria" class="galeria-modal" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+      <div class="galeria-modal-contenido">
+        <button type="button" id="cerrarModalGaleria" class="galeria-cerrar" aria-label="Cerrar imagen">&times;</button>
+        <img id="modalImagen" src="" alt="">
+        <div class="galeria-modal-texto">
+          <span id="modalCategoria" class="galeria-tag"></span>
+          <h3 id="modalTitulo"></h3>
+          <p id="modalDescripcion"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Sección: Buzón de Comentarios -->
   <section id="comentarios" class="section-container seccion-comentarios" style="margin-top: 20px; margin-bottom: 40px; padding: 25px; background: #f8f9fa; border-radius: 8px;">
     <h3>Buzón de Comentarios Ciudadanos</h3>
