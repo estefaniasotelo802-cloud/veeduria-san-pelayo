@@ -1,5 +1,5 @@
 /* ==========================================
-   1. VARIABLES Y CONFIGURACIÓN GLOBAL
+1. VARIABLES Y CONFIGURACIÓN GLOBAL
    ========================================== */
 :root {
   --primary-color: #0b6623; /* Verde esmeralda institucional */
@@ -22,22 +22,29 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: var(--dark-text);
   line-height: 1.6;
-  /* Cambiamos el fondo plano por un degradado muy sutil que da profundidad */
   background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
   overflow-x: hidden;
   max-width: 100%;
 }
 
 /* ==========================================
-   2. NAVEGACIÓN Y BARRA SUPERIOR (GLASSMORPHISM)
+2. NAVEGACIÓN Y BARRA SUPERIOR (GLASSMORPHISM)
    ========================================== */
 .top-bar {
-  background: linear-gradient(135deg, var(--secondary-navy), var(--primary-color));
-  color: var(--white);
-  text-align: right;
-  padding: 8px 5%;
+  background: linear-gradient(
+    90deg,
+    #facc15 0%,
+    #fde047 33%,
+    #ffffff 33%,
+    #ffffff 66%,
+    #2e7d32 66%,
+    #508c46 100%
+  );
+  color: #1e293b;
+  padding: 6px 24px;
   font-size: 0.85rem;
-  letter-spacing: 0.5px;
+  font-weight: 700;
+  border-bottom: 2px solid #508c46;
 }
 
 .navbar {
@@ -77,7 +84,7 @@ body {
   font-weight: 600;
   font-size: 0.85rem;
   padding: 8px 16px;
-  border-radius: 999px; /* Botones tipo píldora */
+  border-radius: 999px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: transparent;
 }
@@ -116,7 +123,7 @@ body {
 }
 
 /* ==========================================
-   3. BANNER HERO Y SECCIONES
+3. BANNER HERO Y SECCIONES
    ========================================== */
 .hero {
   background: url('/fondo.puente.jpg') center/cover no-repeat;
@@ -127,6 +134,7 @@ body {
 .hero-overlay {
   width: 100%;
   height: 100%;
+  min-height: 80vh;
   background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(2px);
   display: flex;
@@ -227,17 +235,12 @@ body {
 /* Tarjetas de Objetivos en Fila Horizontal */
 .cards-grid {
   display: flex;
-  flex-direction: row; /* Fuerza la orientación horizontal */
+  flex-direction: row;
   justify-content: center;
   align-items: stretch;
   gap: 25px;
-  flex-wrap: wrap; /* Permite que bajen con elegancia solo en celulares muy pequeños */
+  flex-wrap: wrap;
   width: 100%;
-}
-
-/* Tarjetas de objetivos con borde superior destacado */
-.card {
-  border-top: 5px solid var(--primary-color) !important;
 }
 
 .card {
@@ -247,11 +250,11 @@ body {
   padding: 35px 25px;
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-  flex: 1; /* Hace que compartan el espacio de manera equitativa */
-  min-width: 260px; /* Ancho mínimo para que no se aprieten demasiado */
-  max-width: 350px; /* Ancho máximo para que no crezcan de más */
+  flex: 1;
+  min-width: 260px;
+  max-width: 350px;
   border: 1px solid var(--glass-border);
-  border-top: 5px solid var(--primary-color);
+  border-top: 5px solid var(--primary-color) !important;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   text-align: left;
 }
@@ -289,7 +292,7 @@ body {
 }
 
 /* ==========================================
-   4. BUZÓN DE COMENTARIOS Y AVATARES
+4. BUZÓN DE COMENTARIOS Y AVATARES
    ========================================== */
 .seccion-comentarios {
   background: var(--glass-bg) !important;
@@ -406,7 +409,7 @@ body {
 }
 
 /* ==========================================
-   5. TABLA DE OBRAS Y MAPA
+5. TABLA DE OBRAS Y MAPA
    ========================================== */
 .tabla-container-glass {
   background: var(--glass-bg);
@@ -503,12 +506,12 @@ body {
 }
 
 /* ==========================================
-   6. BOTONES GLOBALES Y GENERALES
+6. BOTONES GLOBALES Y GENERALES
    ========================================== */
 button, input[type="submit"] {
   width: 100%;
   padding: 12px;
-  background: linear-gradient(135deg, #0077b6, #00b4d8);
+  background: linear-gradient(135deg, #508c46, #2e7d32);
   color: white;
   border: none;
   border-radius: 8px;
@@ -520,7 +523,7 @@ button, input[type="submit"] {
 }
 
 button:hover, input[type="submit"]:hover {
-  background: linear-gradient(135deg, #023e8a, #0077b6);
+  background: linear-gradient(135deg, #2e7d32, #1b5e20);
 }
 
 button:active, input[type="submit"]:active {
@@ -549,7 +552,7 @@ button:active, input[type="submit"]:active {
 }
 
 /* ==========================================
-   7. CHATBOT FLOTANTE
+7. CHATBOT FLOTANTE
    ========================================== */
 .chatbot-container {
   position: fixed;
@@ -674,7 +677,7 @@ button:active, input[type="submit"]:active {
 }
 
 /* ==========================================
-   8. LOGIN Y PANEL ADMINISTRATIVO
+8. LOGIN Y PANEL ADMINISTRATIVO
    ========================================== */
 body.login-body {
   margin: 0;
@@ -712,7 +715,7 @@ body.login-body {
   border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
-login-form h2, .login-card h2 {
+.login-form h2, .login-card h2 {
   margin-bottom: 20px;
   color: var(--secondary-navy);
   text-align: center;
@@ -776,7 +779,6 @@ body.admin-body {
   min-height: 100vh;
   color: #334155;
 }
-
 
 .admin-header {
   background: transparent !important;
@@ -935,7 +937,7 @@ body.admin-body {
 }
 
 /* ==========================================
-   9. MEDIA QUERIES RESPONSIVE
+9. MEDIA QUERIES RESPONSIVE
    ========================================== */
 @media (max-width: 768px) {
   .navbar {
@@ -982,46 +984,63 @@ body.admin-body {
 
 /* ==========================================
    HERRAMIENTA DE ACCESIBILIDAD VISUAL
+   (Esquina inferior izquierda y tonos suaves)
    ========================================== */
 .acc-toolbar {
   position: fixed;
-  top: 95px;
-  right: 12px;
+  bottom: 20px;
+  left: 20px;
+  top: auto !important;
+  right: auto !important;
   z-index: 9500;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-start;
+  gap: 8px;
 }
 
 .acc-main-btn {
-  width: 40px;
-  height: 40px;
-  background-color: #0f172a;
+  width: 44px;
+  height: 44px;
+  background-color: #2e7d32;
   color: #ffffff;
-  border: 1.5px solid #ffffff;
+  border: 2px solid #ffffff;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
   transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
+.acc-main-btn:hover {
+  transform: scale(1.06);
+  background-color: #1b5e20;
+}
+
 .acc-panel {
-  margin-top: 6px;
+  margin-bottom: 4px;
   background-color: #ffffff;
-  color: #0f172a;
-  border: 1px solid #cbd5e1;
+  color: #1e293b;
+  border: 1px solid #cde3d4;
   border-radius: 12px;
-  padding: 8px;
+  padding: 10px;
   width: 225px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
 
 .acc-panel[hidden] {
   display: none;
+}
+
+.acc-row {
+  display: flex;
+  gap: 6px;
 }
 
 .acc-label {
@@ -1031,22 +1050,66 @@ body.admin-body {
   padding: 2px 6px;
 }
 
-.acc-panel button {
-  background-color: #f8fafc;
-  color: #0f172a;
-  border: 1px solid #e2e8f0;
+.acc-panel button,
+.acc-panel .acc-select {
+  background-color: #f4fbf6;
+  color: #1e293b;
+  border: 1px solid #cce3d4;
   border-radius: 8px;
   padding: 7px 10px;
   font-size: 0.82rem;
+  font-weight: 600;
   text-align: left;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.acc-panel button:hover,
+.acc-panel .acc-select:hover {
+  background-color: #e3f4e8;
+  border-color: #508c46;
 }
 
 .acc-panel button.activo {
-  background-color: #0b6623;
-  color: #ffffff;
-  border-color: #0b6623;
-  font-weight: 600;
+  background-color: #d1fae5;
+  color: #14532d;
+  border-color: #2e7d32;
+  font-weight: 700;
+}
+
+/* Resaltar enlaces (visible en menú y botones) */
+body.acc-resaltar-enlaces a,
+body.acc-resaltar-enlaces .nav-links a,
+body.acc-resaltar-enlaces button:not(.acc-main-btn) {
+  background-color: #fef08a !important;
+  color: #111827 !important;
+  outline: 2px solid #ca8a04 !important;
+  outline-offset: 2px;
+  text-decoration: underline !important;
+}
+
+/* Lectura fácil / dislexia (cambio real en tipografía y lectura) */
+body.acc-lectura-facil,
+body.acc-lectura-facil p,
+body.acc-lectura-facil span,
+body.acc-lectura-facil a,
+body.acc-lectura-facil li,
+body.acc-lectura-facil td,
+body.acc-lectura-facil th,
+body.acc-lectura-facil h1,
+body.acc-lectura-facil h2,
+body.acc-lectura-facil h3 {
+  font-family: "Verdana", "Tahoma", "Arial", sans-serif !important;
+  letter-spacing: 0.08em !important;
+  word-spacing: 0.18em !important;
+  line-height: 1.85 !important;
+}
+
+body.acc-lectura-facil section p,
+body.acc-lectura-facil .card,
+body.acc-lectura-facil .history-content {
+  background-color: #fffdf5 !important;
+  color: #1e293b !important;
 }
 
 html.acc-deuteranopia {
@@ -1139,8 +1202,6 @@ html.acc-contraste {
 }
 
 .galeria-card-body {
-  position: relative;
-  z-index: 2;
   position: absolute;
   left: 0;
   right: 0;
@@ -1149,6 +1210,7 @@ html.acc-contraste {
   color: #ffffff;
   opacity: 0.92;
   transition: opacity 0.25s ease;
+  z-index: 2;
 }
 
 .galeria-tag {

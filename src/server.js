@@ -33,7 +33,7 @@ function requerirAdmin(req, res, next) {
 }
 
 // --- BLOQUEO DE SEGURIDAD ANTES DE LOS ARCHIVOS ESTÁTICOS ---
-// Si alguien intenta pedir directamente admin.html por la URL, lo redirigimos al login
+
 app.get('/admin.html', (req, res) => {
   return res.redirect('/login');
 });

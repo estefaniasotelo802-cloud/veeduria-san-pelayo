@@ -15,6 +15,15 @@ let mapaGlobal = null;
 const marcadoresObras = {};
 let zoomTextoActual = 100;
 
+function escaparHTML(texto) {
+    return String(texto || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 // 1. GESTIÓN DE LA TABLA PÚBLICA
 
 async function obtenerObrasPublicas() {
@@ -43,20 +52,20 @@ async function obtenerObrasPublicas() {
             const brutoPorcentaje = obra.avance_porcentaje !== undefined && obra.avance_porcentaje !== null ? obra.avance_porcentaje : 
                                    (obra.porcentaje !== undefined && obra.porcentaje !== null ? obra.porcentaje : 
                                    (obra.avance !== undefined && obra.avance !== null ? obra.avance : 0));
-            const porcentajeVal = brutoPorcentaje !== '' ? brutoPorcentaje : 0;
+            const porcentajeNum = Math.max(0, Math.min(100, Number(brutoPorcentaje) || 0));
 
             const fechaInicio = obra.fecha_inicio ? new Date(obra.fecha_inicio).toLocaleDateString() : 'N/D';
             const fechaFin = obra.fecha_fin ? new Date(obra.fecha_fin).toLocaleDateString() : 'N/D';
 
             fila.innerHTML = `
-                <td>${obra.nombre}</td>
-                <td>${obra.sector}</td>
+                <td>${escaparHTML(obra.nombre)}</td>
+                <td>${escaparHTML(obra.sector)}</td>
                 <td>$${Number(obra.presupuesto).toLocaleString()}</td>
-                <td><span class="badge ${obtenerClaseEstado(obra.estado)}">${obra.estado}</span></td>
+                <td><span class="badge ${obtenerClaseEstado(obra.estado)}">${escaparHTML(obra.estado)}</span></td>
                 <td>
                     <div class="progress-bar-container">
-                        <div class="progress-bar" style="width: ${porcentajeVal}%;"></div>
-                        <span>${porcentajeVal}%</span>
+                        <div class="progress-bar" style="--progress-width: ${porcentajeNum}%; width: ${porcentajeNum}%;"></div>
+                        <span>${porcentajeNum}%</span>
                     </div>
                 </td>
                 <td style="color: #475569; font-size: 0.9rem;">${fechaInicio}</td>
@@ -155,10 +164,10 @@ async function cargarMarcadoresEnMapa(map) {
 
             const contenidoPopup = `
                 <div style="font-family: Arial, sans-serif; min-width: 180px;">
-                    <h4 style="margin: 0 0 5px 0; color: #2c3e50;">${obra.nombre}</h4>
-                    <p style="margin: 3px 0;"><strong>Sector:</strong> ${obra.sector}</p>
+                    <h4 style="margin: 0 0 5px 0; color: #2c3e50;">${escaparHTML(obra.nombre)}</h4>
+                    <p style="margin: 3px 0;"><strong>Sector:</strong> ${escaparHTML(obra.sector)}</p>
                     <p style="margin: 3px 0;"><strong>Presupuesto:</strong> $${Number(obra.presupuesto).toLocaleString()}</p>
-                    <p style="margin: 3px 0;"><strong>Estado:</strong> ${obra.estado}</p>
+                    <p style="margin: 3px 0;"><strong>Estado:</strong> ${escaparHTML(obra.estado)}</p>
                     <p style="margin: 3px 0;"><strong>Avance:</strong> ${porcentajeVal}%</p>
                 </div>
             `;
@@ -203,19 +212,19 @@ async function cargarComentariosPublicos() {
             const iniciales = obtenerIniciales(autor);
             const textoComentario = c.comentario || c.texto || '';
             const fechaFormateada = c.fecha ? new Date(c.fecha).toLocaleDateString() : 'Reciente';
-            const obraInfo = c.obra_nombre ? `<div style="font-size: 12px; color: #0284c7; margin-top: 2px;">Obra: ${c.obra_nombre}</div>` : '';
+            const obraInfo = c.obra_nombre ? `<div style="font-size: 12px; color: #0284c7; margin-top: 2px;">Obra: ${escaparHTML(c.obra_nombre)}</div>` : '';
 
             const divComentario = document.createElement('div');
             divComentario.className = 'comentario-item';
             divComentario.innerHTML = `
-                <div class="comentario-avatar">${iniciales}</div>
+                <div class="comentario-avatar">${escaparHTML(iniciales)}</div>
                 <div class="comentario-contenido">
                     <div class="comentario-header">
-                        <span class="comentario-autor">${autor}</span>
+                        <span class="comentario-autor">${escaparHTML(autor)}</span>
                         <span class="comentario-fecha">${fechaFormateada}</span>
                     </div>
                     ${obraInfo}
-                    <p class="comentario-texto">${textoComentario}</p>
+                    <p class="comentario-texto">${escaparHTML(textoComentario)}</p>
                 </div>
             `;
             contenedorComentarios.appendChild(divComentario);
@@ -421,8 +430,17 @@ function cambiarTamanoTexto(cambio) {
     } catch (e) {}
 }
 
-function toggleOpcionExtra(claseCss, idBoton) {
-    const activo = document.documentElement.classList.toggle(claseCss);
+function toggleOpcionExtra(claseCss, idBoton, forzarEstado = null) {
+    let activo;
+    if (typeof forzarEstado === 'boolean') {
+        document.body.classList.toggle(claseCss, forzarEstado);
+        document.documentElement.classList.toggle(claseCss, forzarEstado);
+        activo = forzarEstado;
+    } else {
+        activo = document.body.classList.toggle(claseCss);
+        document.documentElement.classList.toggle(claseCss, activo);
+    }
+
     const btn = document.getElementById(idBoton);
     if (btn) btn.classList.toggle('activo', activo);
     try {
@@ -453,6 +471,16 @@ function setModoAccesibilidad(modo) {
 }
 
 function inicializarAccesibilidad() {
+    document.addEventListener('click', (e) => {
+        const toolbar = document.querySelector('.acc-toolbar');
+        const panel = document.getElementById('accMenuPanel');
+        const btn = document.getElementById('btnAccMenu');
+        if (toolbar && panel && !panel.hasAttribute('hidden') && !toolbar.contains(e.target)) {
+            panel.setAttribute('hidden', '');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+        }
+    });
+
     try {
         const modo = localStorage.getItem('modoAccesibilidadVeeduria') || 'normal';
         setModoAccesibilidad(modo);
@@ -464,10 +492,10 @@ function inicializarAccesibilidad() {
         }
 
         if (localStorage.getItem('veeduria_acc-lectura-facil') === '1') {
-            toggleOpcionExtra('acc-lectura-facil', 'btnLecturaFacil');
+            toggleOpcionExtra('acc-lectura-facil', 'btnLecturaFacil', true);
         }
         if (localStorage.getItem('veeduria_acc-resaltar-enlaces') === '1') {
-            toggleOpcionExtra('acc-resaltar-enlaces', 'btnResaltarEnlaces');
+            toggleOpcionExtra('acc-resaltar-enlaces', 'btnResaltarEnlaces', true);
         }
     } catch (e) {}
 }
