@@ -34,9 +34,10 @@ body {
   background: linear-gradient(
     90deg,
     #ffffff 0%,
-    #ffffff 42%,
-    #1b5e20 68%,
-    #14532d 78%,
+    #ffffff 25%,
+    #1b5e20 45%,
+    #14532d 62%,
+    #fde047 80%,
     #facc15 100%
   );
   color: #14532d;
