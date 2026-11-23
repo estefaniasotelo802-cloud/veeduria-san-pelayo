@@ -30,14 +30,14 @@ body {
 /* ==========================================
 2. NAVEGACIÓN Y BARRA SUPERIOR (GLASSMORPHISM)
    ========================================== */
-.top-bar {
+   .top-bar {
   background: linear-gradient(
     90deg,
-    #facc15 0%,
-    #fef08a 22%,
-    #ffffff 48%,
-    #2e7d32 74%,
-    #14532d 100%
+    #ffffff 0%,
+    #ffffff 42%,
+    #1b5e20 68%,
+    #14532d 78%,
+    #facc15 100%
   );
   color: #14532d;
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.85);
