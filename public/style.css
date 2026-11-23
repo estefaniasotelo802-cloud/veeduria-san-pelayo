@@ -31,17 +31,22 @@ body {
 2. NAVEGACIÓN Y BARRA SUPERIOR (GLASSMORPHISM)
    ========================================== */
 .top-bar {
-  background: linear-gradient(90deg, #1b5e20 0%, #2e7d32 65%, #388e3c 100%);
-  color: #ffffff;
+  background: linear-gradient(
+    90deg,
+    #facc15 0%,
+    #fef08a 24%,
+    #ffffff 50%,
+    #86efac 76%,
+    #508c46 100%
+  );
+  color: #14532d;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.85);
   padding: 7px 24px;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  border-top: 4px solid #facc15; /* Amarillo de la bandera */
-  border-bottom: 3px solid #ffffff; /* Blanco de la bandera */
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  border-bottom: 2px solid #508c46;
 }
 
 .navbar {
