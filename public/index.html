@@ -27,8 +27,8 @@
         <li><a href="#objetivo">NUESTRO OBJETIVO</a></li>
         <li><a href="#historia">HISTORIA DE SAN PELAYO</a></li>
         <li><a href="#galeria">GALERÍA</a></li>
-        <li><a href="#comentarios">COMENTARIOS</a></li>
-        <li><a href="#veeduria" class="nav-btn-highlight">VEEDURÍA CIUDADANA</a></li>
+        <li><a href="#veeduria">VEEDURÍA CIUDADANA</a></li>
+        <li><a href="#comentarios" class="nav-btn-highlight">COMENTARIOS</a></li>
       </ul>
     </nav>
 
@@ -103,25 +103,10 @@
     </div>
   </section>
 
-  <!-- Sección: Buzón de Comentarios -->
-  <section id="comentarios" class="section-container seccion-comentarios" style="margin-top: 20px; margin-bottom: 40px; padding: 25px; background: #f8f9fa; border-radius: 8px;">
-    <h3>Buzón de Comentarios Ciudadanos</h3>
-    
-    <!-- Formulario -->
-    <form id="formComentario" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-      <input type="text" id="nombreUsuario" placeholder="Tu nombre o anónimo" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
-      <textarea id="textoComentario" placeholder="Escribe tu comentario o veeduría aquí..." rows="3" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;"></textarea>
-      <button type="submit" style="padding: 12px; background: linear-gradient(135deg, #1b5e20, #2e7d32); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Publicar Comentario</button>
-    </form>
-
-    <!-- Lista donde se cargarán los comentarios -->
-    <div id="listaComentarios" style="display: flex; flex-direction: column; gap: 10px;"></div>
-  </section>
-
-  <!-- Sección: Veeduría Ciudadana (Tabla y Mapa Interactivo) -->
+  <!-- Sección: Veeduría Ciudadana (Tabla, Mapa y Buzón de Comentarios) -->
   <section id="veeduria" class="section-container">
     <h2>Sección de Veeduría Ciudadana</h2>
-    <p class="section-lead">Consulta en tiempo real el estado de los proyectos, sus fechas y su ubicación en el mapa interactivo de San Pelayo.</p>
+    <p class="section-lead">Consulta en tiempo real el estado de los proyectos, sus fechas y su ubicación en el mapa interactivo de San Pelayo, y deja tus reportes en el buzón ciudadano.</p>
     
     <!-- Contenedor de la Tabla -->
     <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 30px;">
@@ -147,6 +132,21 @@
 
     <!-- Contenedor Único del Mapa -->
     <div id="map" style="height: 450px; border-radius: 8px; border: 1px solid #e2e8f0;"></div>
+
+    <!-- Buzón de Comentarios Ciudadanos dentro de Veeduría Ciudadana -->
+    <div id="comentarios" class="seccion-comentarios" style="margin-top: 36px; margin-bottom: 10px; padding: 25px; background: #f8f9fa; border-radius: 16px;">
+      <h3>Buzón de Comentarios Ciudadanos</h3>
+      
+      <!-- Formulario -->
+      <form id="formComentario" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+        <input type="text" id="nombreUsuario" placeholder="Tu nombre o anónimo" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+        <textarea id="textoComentario" placeholder="Escribe tu comentario o veeduría aquí..." rows="3" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;"></textarea>
+        <button type="submit" style="padding: 12px; background: linear-gradient(135deg, #1b5e20, #2e7d32); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Publicar Comentario</button>
+      </form>
+
+      <!-- Lista donde se cargarán los comentarios -->
+      <div id="listaComentarios" style="display: flex; flex-direction: column; gap: 10px;"></div>
+    </div>
   </section>
 
   <!-- Botón y Panel de Accesibilidad (Esquina Inferior Izquierda) -->
