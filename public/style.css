@@ -58,17 +58,13 @@ body {
   gap: 10px;
 }
 
-.logo-badge {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: #ffffff;
-  color: #14532d;
-  font-weight: 800;
-  font-size: 0.85rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.logo-escudo {
+  height: 38px;
+  width: auto;
+  max-width: 44px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
 }
 
 .logo h2 {
