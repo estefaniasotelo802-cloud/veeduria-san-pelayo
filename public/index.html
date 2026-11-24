@@ -15,28 +15,28 @@
 </head>
 <body>
 
-  <!-- Barra Superior de Información (Colores bandera de San Pelayo desde /style.css) -->
+  <!-- Barra Superior de Información -->
   <div class="top-bar">
     <span>Red de Veedurías Ciudadanas de Colombia | Municipio de San Pelayo, Córdoba</span>
   </div>
 
-  <!-- Navegación Principal -->
-  <nav class="navbar">
-    <div class="logo">
-      <h2>Veeduría<span>San Pelayo</span></h2>
-    </div>
-    <ul class="nav-links">
-      <li><a href="#inicio">INICIO</a></li>
-      <li><a href="#objetivo">NUESTRO OBJETIVO</a></li>
-      <li><a href="#historia">HISTORIA DE SAN PELAYO</a></li>
-      <li><a href="#galeria">GALERÍA</a></li>
-      <li><a href="#comentarios">COMENTARIOS</a></li>
-      <li><a href="#veeduria" class="nav-btn-highlight">VEEDURÍA CIUDADANA</a></li>
-    </ul>
-  </nav>
-
-  <!-- Banner Principal (Hero con Foto del Puente — sin botones duplicados) -->
+  <!-- Banner Principal (Hero a pantalla completa con barra flotante) -->
   <section id="inicio" class="hero">
+    <nav class="navbar" aria-label="Navegación principal">
+      <div class="logo">
+        <span class="logo-badge" aria-hidden="true">SP</span>
+        <h2>Veeduría<span>San Pelayo</span></h2>
+      </div>
+      <ul class="nav-links">
+        <li><a href="#inicio" class="nav-link-active">INICIO</a></li>
+        <li><a href="#objetivo">NUESTRO OBJETIVO</a></li>
+        <li><a href="#historia">HISTORIA DE SAN PELAYO</a></li>
+        <li><a href="#galeria">GALERÍA</a></li>
+        <li><a href="#comentarios">COMENTARIOS</a></li>
+        <li><a href="#veeduria" class="nav-btn-highlight">VEEDURÍA CIUDADANA</a></li>
+      </ul>
+    </nav>
+
     <div class="hero-overlay">
       <div class="hero-content">
         <p class="subtitle">Transparencia y Participación en Córdoba</p>
@@ -117,7 +117,7 @@
     <form id="formComentario" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
       <input type="text" id="nombreUsuario" placeholder="Tu nombre o anónimo" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
       <textarea id="textoComentario" placeholder="Escribe tu comentario o veeduría aquí..." rows="3" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;"></textarea>
-      <button type="submit" style="padding: 12px; background: linear-gradient(135deg, #0b6623, #0284c7); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Publicar Comentario</button>
+      <button type="submit" style="padding: 12px; background: linear-gradient(135deg, #1b5e20, #2e7d32); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Publicar Comentario</button>
     </form>
 
     <!-- Lista donde se cargarán los comentarios -->
