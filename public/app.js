@@ -424,19 +424,6 @@ function toggleAltoContraste(activado) {
     setModoAccesibilidad(activado ? 'contraste' : 'normal');
 }
 
-function sincronizarLecturaFacil(activado) {
-    const checkTexto = document.getElementById('switchLecturaFacil');
-    const checkCog = document.getElementById('switchCognitivaFacil');
-    if (checkTexto) checkTexto.checked = activado;
-    if (checkCog) checkCog.checked = activado;
-
-    document.body.classList.toggle('acc-lectura-facil', activado);
-    document.documentElement.classList.toggle('acc-lectura-facil', activado);
-    try {
-        localStorage.setItem('veeduria_acc-lectura-facil', activado ? '1' : '0');
-    } catch (e) {}
-}
-
 function restablecerAccesibilidad() {
     accTamanoPx = 16;
     zoomTextoActual = 100;
@@ -446,7 +433,7 @@ function restablecerAccesibilidad() {
     document.body.classList.remove('acc-lectura-facil', 'acc-resaltar-enlaces');
     document.documentElement.classList.remove('acc-lectura-facil', 'acc-resaltar-enlaces');
 
-    ['switchLecturaFacil', 'switchResaltarEnlaces', 'switchAltoContraste', 'switchCognitivaFacil'].forEach((id) => {
+    ['switchLecturaFacil', 'switchResaltarEnlaces', 'switchAltoContraste'].forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.checked = false;
     });
@@ -523,13 +510,6 @@ function toggleOpcionExtra(claseCss, idBoton, forzarEstado = null) {
         control.checked = activo;
     } else if (control) {
         control.classList.toggle('activo', activo);
-    }
-
-    if (claseCss === 'acc-lectura-facil') {
-        const checkTexto = document.getElementById('switchLecturaFacil');
-        const checkCog = document.getElementById('switchCognitivaFacil');
-        if (checkTexto) checkTexto.checked = activo;
-        if (checkCog) checkCog.checked = activo;
     }
 
     try {

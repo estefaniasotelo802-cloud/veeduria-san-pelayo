@@ -208,10 +208,6 @@
           <span class="acc-tab-icon">◐</span>
           <span>Color</span>
         </button>
-        <button type="button" class="acc-tab" data-acc-tab="cognitiva" onclick="cambiarTabAccesibilidad('cognitiva')">
-          <span class="acc-tab-icon">?</span>
-          <span>Cognitiva</span>
-        </button>
         <button type="button" class="acc-tab" data-acc-tab="voz" onclick="cambiarTabAccesibilidad('voz')">
           <span class="acc-tab-icon">🔊</span>
           <span>Voz</span>
@@ -302,26 +298,7 @@
         </select>
       </div>
 
-      <!-- Pestaña 4: COGNITIVA -->
-      <div class="acc-tab-content" data-acc-panel="cognitiva">
-        <div class="acc-section-label">APOYO A LA LECTURA</div>
-
-        <label class="acc-switch-row" for="switchCognitivaFacil">
-          <span class="acc-switch-left">
-            <span class="acc-row-icon">?</span>
-            <span class="acc-row-text">Lectura fácil (dislexia)</span>
-          </span>
-          <input
-            type="checkbox"
-            id="switchCognitivaFacil"
-            class="acc-switch-input"
-            onchange="sincronizarLecturaFacil(this.checked)"
-          >
-          <span class="acc-switch-slider" aria-hidden="true"></span>
-        </label>
-      </div>
-
-      <!-- Pestaña 5: VOZ -->
+      <!-- Pestaña 4: VOZ -->
       <div class="acc-tab-content" data-acc-panel="voz">
         <div class="acc-section-label">LECTOR DE PANTALLA</div>
         <div class="acc-voice-grid">
