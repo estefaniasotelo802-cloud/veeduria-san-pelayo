@@ -1,5 +1,30 @@
 let obrasCache = [];
 
+function escaparHTMLAdmin(texto) {
+    return String(texto || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function obtenerReportesCiudadanos() {
+    try {
+        return JSON.parse(localStorage.getItem('veeduriaReportesComentarios') || '{}');
+    } catch (e) {
+        return {};
+    }
+}
+
+function limpiarReporteGuardado(clave) {
+    try {
+        const reportes = obtenerReportesCiudadanos();
+        delete reportes[clave];
+        localStorage.setItem('veeduriaReportesComentarios', JSON.stringify(reportes));
+    } catch (e) {}
+}
+
 // Función global para cargar las obras en el panel de administración
 async function cargarObrasAdmin() {
     const tablaAdminBody = document.getElementById('tablaAdminBody');
@@ -22,8 +47,8 @@ async function cargarObrasAdmin() {
             fila.style.borderBottom = '1px solid #e2e8f0';
             fila.innerHTML = `
                 <td style="padding: 10px;">${obra.id}</td>
-                <td style="padding: 10px;">${obra.nombre}</td>
-                <td style="padding: 10px;">${obra.sector}</td>
+                <td style="padding: 10px;">${escaparHTMLAdmin(obra.nombre)}</td>
+                <td style="padding: 10px;">${escaparHTMLAdmin(obra.sector)}</td>
                 <td style="padding: 10px; display: flex; gap: 8px;">
                     <button onclick="prepararEdicionPorId(${obra.id})" style="background-color: #0284c7 !important; color: white !important; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Editar</button>
                     <button onclick="eliminarObra(${obra.id})" style="background-color: #dc2626 !important; color: white !important; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Eliminar</button>
@@ -36,7 +61,7 @@ async function cargarObrasAdmin() {
     }
 }
 
-// Función global para cargar los comentarios en el panel de administración
+// Carga únicamente comentarios reportados por la comunidad para no sobrecargar al admin
 async function cargarComentariosAdmin() {
     const tablaComentariosAdmin = document.getElementById('tablaComentariosAdmin');
     if (!tablaComentariosAdmin) return;
@@ -44,15 +69,30 @@ async function cargarComentariosAdmin() {
     try {
         const respuesta = await fetch('/obras/comentarios');
         const comentarios = await respuesta.json();
+        const reportes = obtenerReportesCiudadanos();
 
         tablaComentariosAdmin.innerHTML = '';
 
         if (!Array.isArray(comentarios) || comentarios.length === 0) {
-            tablaComentariosAdmin.innerHTML = '<tr><td colspan="5" style="padding: 15px; text-align: center; color: #64748b;">No hay comentarios registrados aún.</td></tr>';
+            tablaComentariosAdmin.innerHTML = '<tr><td colspan="5" style="padding: 15px; text-align: center; color: #64748b;">La moderación diaria se gestiona automáticamente; no hay comentarios pendientes.</td></tr>';
             return;
         }
 
-        comentarios.forEach(c => {
+        const comentariosReportados = comentarios
+            .map((c, idx) => {
+                const autor = c.ciudadano || c.nombre || 'Anónimo';
+                const clave = String(c.id ?? `${autor}-${c.fecha || idx}`);
+                const cantidadReportes = Number(reportes[clave] || 0);
+                return { comentarioObj: c, clave, cantidadReportes };
+            })
+            .filter(item => item.cantidadReportes > 0);
+
+        if (comentariosReportados.length === 0) {
+            tablaComentariosAdmin.innerHTML = '<tr><td colspan="5" style="padding: 15px; text-align: center; color: #64748b;">No hay comentarios reportados por la comunidad. El filtro automático y el reporte ciudadano están activos.</td></tr>';
+            return;
+        }
+
+        comentariosReportados.forEach(({ comentarioObj: c, clave, cantidadReportes }) => {
             const fila = document.createElement('tr');
             fila.style.borderBottom = '1px solid #e2e8f0';
             
@@ -62,18 +102,18 @@ async function cargarComentariosAdmin() {
             const fechaFormateada = c.fecha ? new Date(c.fecha).toLocaleDateString() : 'Sin fecha';
 
             fila.innerHTML = `
-                <td style="padding: 10px;">${c.id}</td>
-                <td style="padding: 10px;"><strong>${autor}</strong><br><span style="font-size: 11px; color: #64748b;">${obraTexto}</span></td>
-                <td style="padding: 10px;">${textoComentario}</td>
+                <td style="padding: 10px;">${c.id ?? '-'}</td>
+                <td style="padding: 10px;"><strong>${escaparHTMLAdmin(autor)}</strong><br><span style="font-size: 11px; color: #64748b;">${escaparHTMLAdmin(obraTexto)} · ${cantidadReportes} reporte(s)</span></td>
+                <td style="padding: 10px;">${escaparHTMLAdmin(textoComentario)}</td>
                 <td style="padding: 10px; color: #64748b; font-size: 0.9rem;">${fechaFormateada}</td>
                 <td style="padding: 10px;">
-                    <button onclick="eliminarComentarioAdmin(${c.id})" style="background-color: #dc2626 !important; color: white !important; border: none !important; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Eliminar</button>
+                    <button onclick="eliminarComentarioAdmin(${c.id}, '${escaparHTMLAdmin(clave)}')" style="background-color: #dc2626 !important; color: white !important; border: none !important; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Eliminar</button>
                 </td>
             `;
             tablaComentariosAdmin.appendChild(fila);
         });
     } catch (error) {
-        console.error('Error al cargar comentarios en el panel:', error);
+        console.error('Error al cargar comentarios reportados en el panel:', error);
     }
 }
 
@@ -124,11 +164,12 @@ window.eliminarObra = async function(id) {
     }
 };
 
-window.eliminarComentarioAdmin = async function(id) {
-    if (confirm('¿Estás segura de que deseas eliminar este comentario?')) {
+window.eliminarComentarioAdmin = async function(id, clave = '') {
+    if (confirm('¿Estás segura de que deseas eliminar este comentario reportado?')) {
         try {
             const respuesta = await fetch(`/obras/comentarios/${id}`, { method: 'DELETE' });
             if (respuesta.ok) {
+                if (clave) limpiarReporteGuardado(clave);
                 cargarComentariosAdmin();
             } else {
                 alert('No se pudo eliminar el comentario.');

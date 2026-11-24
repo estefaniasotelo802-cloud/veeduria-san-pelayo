@@ -15,6 +15,7 @@ let mapaGlobal = null;
 const marcadoresObras = {};
 let zoomTextoActual = 100;
 let accTamanoPx = 16;
+let ultimoComentarioEnviado = { texto: '', timestamp: 0 };
 
 function escaparHTML(texto) {
     return String(texto || '')
@@ -182,7 +183,91 @@ async function cargarMarcadoresEnMapa(map) {
     }
 }
 
-// 3. GESTIÓN DE COMENTARIOS PÚBLICOS CON AVATAR
+// 3. FILTRO AUTOMÁTICO, REPORTE CIUDADANO Y COMENTARIOS PÚBLICOS
+
+function validarComentarioAutomatico(nombre, texto) {
+    const autorLimpio = (nombre || '').trim();
+    const limpio = (texto || '').trim();
+
+    if (autorLimpio.length < 2) {
+        return { valido: false, motivo: 'Escribe tu nombre o "Anónimo" (mínimo 2 caracteres).' };
+    }
+    if (limpio.length < 5) {
+        return { valido: false, motivo: 'Tu comentario es muy corto; escribe al menos 5 caracteres.' };
+    }
+    if (limpio.length > 400) {
+        return { valido: false, motivo: 'El comentario no puede superar los 400 caracteres.' };
+    }
+
+    // Evita envíos idénticos repetidos en menos de 15 segundos
+    const ahora = Date.now();
+    if (
+        ultimoComentarioEnviado.texto.toLowerCase() === limpio.toLowerCase() &&
+        ahora - ultimoComentarioEnviado.timestamp < 15000
+    ) {
+        return { valido: false, motivo: 'Ya enviaste ese mismo comentario hace unos segundos.' };
+    }
+
+    // Bloquea enlaces y spam comercial
+    const tieneEnlace = /(https?:\/\/|www\.|\.(com|co|net|org|io|gg|me|ly)\b)/i.test(limpio);
+    if (tieneEnlace) {
+        return { valido: false, motivo: 'No se permiten enlaces ni direcciones web en el buzón ciudadano.' };
+    }
+
+    // Bloquea repetición exagerada de caracteres (ej. "aaaaaaa" o "!!!!!!")
+    if (/(.)\1{6,}/i.test(limpio)) {
+        return { valido: false, motivo: 'Evita repetir el mismo carácter muchas veces seguidas.' };
+    }
+
+    // Filtro automático de lenguaje ofensivo o inadecuado
+    const palabrasBloqueadas = [
+        'idiota', 'imbecil', 'imbécil', 'estupido', 'estúpido',
+        'basura', 'mierda', 'puta', 'puto', 'malparido', 'gonorrea', 'hp'
+    ];
+    const textoNormalizado = limpio
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+
+    const encontrada = palabrasBloqueadas.find((palabra) => {
+        const escapada = palabra.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return new RegExp(`\\b${escapada}\\b`, 'i').test(textoNormalizado);
+    });
+
+    if (encontrada) {
+        return {
+            valido: false,
+            motivo: 'El filtro automático detectó lenguaje inadecuado; por favor exprésate con respeto.'
+        };
+    }
+
+    return { valido: true, autor: autorLimpio, texto: limpio };
+}
+
+function mostrarAvisoComentario(mensaje, esError = true) {
+    const aviso = document.getElementById('mensajeComentario');
+    if (!aviso) {
+        alert(mensaje);
+        return;
+    }
+    aviso.textContent = mensaje;
+    aviso.style.display = 'block';
+    aviso.style.color = esError ? '#b91c1c' : '#166534';
+}
+
+function obtenerReportesGuardados() {
+    try {
+        return JSON.parse(localStorage.getItem('veeduriaReportesComentarios') || '{}');
+    } catch (e) {
+        return {};
+    }
+}
+
+function guardarReportes(reportes) {
+    try {
+        localStorage.setItem('veeduriaReportesComentarios', JSON.stringify(reportes));
+    } catch (e) {}
+}
 
 function obtenerIniciales(nombre) {
     if (!nombre || nombre.toLowerCase() === 'anónimo') return '👤';
@@ -193,6 +278,29 @@ function obtenerIniciales(nombre) {
     return partes[0].substring(0, 2).toUpperCase();
 }
 
+async function reportarComentario(claveComentario, boton) {
+    const reportes = obtenerReportesGuardados();
+    const actual = Number(reportes[claveComentario] || 0) + 1;
+    reportes[claveComentario] = actual;
+    guardarReportes(reportes);
+
+    if (boton) {
+        boton.disabled = true;
+        boton.textContent = actual >= 3 ? 'Oculto por reportes' : 'Reportado';
+    }
+
+    // Intento opcional de notificar al backend si existe endpoint
+    try {
+        await fetch(`/obras/comentarios/${encodeURIComponent(claveComentario)}/reportar`, {
+            method: 'POST'
+        });
+    } catch (e) {
+        // Si el backend aún no tiene esta ruta, el reporte local sigue funcionando
+    }
+
+    cargarComentariosPublicos();
+}
+
 async function cargarComentariosPublicos() {
     const contenedorComentarios = document.getElementById('contenedorComentarios') || document.getElementById('listaComentarios');
     if (!contenedorComentarios) return;
@@ -200,6 +308,7 @@ async function cargarComentariosPublicos() {
     try {
         const respuesta = await fetch('/obras/comentarios');
         const comentarios = await respuesta.json();
+        const reportes = obtenerReportesGuardados();
 
         contenedorComentarios.innerHTML = '';
 
@@ -208,12 +317,25 @@ async function cargarComentariosPublicos() {
             return;
         }
 
-        comentarios.forEach(c => {
+        // Si acumula 3 o más reportes ciudadanos, se oculta automáticamente sin sobrecargar al admin
+        const comentariosVisibles = comentarios.filter((c, idx) => {
+            const clave = String(c.id ?? `${c.ciudadano || c.nombre || 'anon'}-${c.fecha || idx}`);
+            return Number(reportes[clave] || 0) < 3;
+        });
+
+        if (comentariosVisibles.length === 0) {
+            contenedorComentarios.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">No hay comentarios visibles en este momento.</p>';
+            return;
+        }
+
+        comentariosVisibles.forEach((c, idx) => {
             const autor = c.ciudadano || c.nombre || 'Anónimo';
             const iniciales = obtenerIniciales(autor);
             const textoComentario = c.comentario || c.texto || '';
             const fechaFormateada = c.fecha ? new Date(c.fecha).toLocaleDateString() : 'Reciente';
             const obraInfo = c.obra_nombre ? `<div style="font-size: 12px; color: #0284c7; margin-top: 2px;">Obra: ${escaparHTML(c.obra_nombre)}</div>` : '';
+            const clave = String(c.id ?? `${autor}-${c.fecha || idx}`);
+            const yaReportado = Number(reportes[clave] || 0) > 0;
 
             const divComentario = document.createElement('div');
             divComentario.className = 'comentario-item';
@@ -226,8 +348,22 @@ async function cargarComentariosPublicos() {
                     </div>
                     ${obraInfo}
                     <p class="comentario-texto">${escaparHTML(textoComentario)}</p>
+                    <div style="margin-top: 8px; display: flex; justify-content: flex-end;">
+                        <button
+                            type="button"
+                            class="btn-reportar-comentario"
+                            ${yaReportado ? 'disabled' : ''}
+                            style="width: auto; padding: 4px 10px; font-size: 0.76rem; border-radius: 999px; background: ${yaReportado ? '#e2e8f0' : 'transparent'}; color: ${yaReportado ? '#64748b' : '#64748b'}; border: 1px solid #cbd5e1; box-shadow: none;"
+                        >${yaReportado ? 'Reportado' : 'Reportar'}</button>
+                    </div>
                 </div>
             `;
+
+            const btnReportar = divComentario.querySelector('.btn-reportar-comentario');
+            if (btnReportar && !yaReportado) {
+                btnReportar.addEventListener('click', () => reportarComentario(clave, btnReportar));
+            }
+
             contenedorComentarios.appendChild(divComentario);
         });
 
@@ -236,7 +372,7 @@ async function cargarComentariosPublicos() {
     }
 }
 
-// 4. ENVÍO DE NUEVOS COMENTARIOS (POST)
+// 4. ENVÍO DE NUEVOS COMENTARIOS (POST) CON FILTRO AUTOMÁTICO
 
 function inicializarFormularioComentarios() {
     const form = document.getElementById('formComentario') || document.querySelector('form');
@@ -250,9 +386,15 @@ function inicializarFormularioComentarios() {
 
         if (!inputNombre || !inputTexto) return;
 
+        const validacion = validarComentarioAutomatico(inputNombre.value, inputTexto.value);
+        if (!validacion.valido) {
+            mostrarAvisoComentario(validacion.motivo, true);
+            return;
+        }
+
         const nuevoComentario = {
-            ciudadano: inputNombre.value.trim() || 'Anónimo',
-            comentario: inputTexto.value.trim()
+            ciudadano: validacion.autor,
+            comentario: validacion.texto
         };
 
         try {
@@ -265,15 +407,21 @@ function inicializarFormularioComentarios() {
             });
 
             if (respuesta.ok) {
+                ultimoComentarioEnviado = {
+                    texto: validacion.texto,
+                    timestamp: Date.now()
+                };
                 inputNombre.value = '';
                 inputTexto.value = '';
+                mostrarAvisoComentario('Tu comentario fue publicado correctamente.', false);
                 cargarComentariosPublicos();
             } else {
-                alert('Hubo un error al registrar el comentario en el servidor.');
+                const dataError = await respuesta.json().catch(() => ({}));
+                mostrarAvisoComentario(dataError.error || 'No se pudo registrar el comentario.', true);
             }
         } catch (error) {
             console.error('Error de red al enviar el comentario:', error);
-            alert('No se pudo conectar con el servidor.');
+            mostrarAvisoComentario('No se pudo conectar con el servidor.', true);
         }
     });
 }

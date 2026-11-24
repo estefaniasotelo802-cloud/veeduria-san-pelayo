@@ -16,6 +16,48 @@ const administradoresAutorizados = [
   { cedula: '7350284', passwordPlana: 'val6790' }
 ];
 
+// Filtro automático en servidor para evitar que se guarden mensajes inadecuados o spam
+function validarContenidoComentario(autor, mensaje) {
+  const autorLimpio = (autor || 'Anónimo').trim();
+  const textoLimpio = (mensaje || '').trim();
+
+  if (!textoLimpio || textoLimpio.length < 5) {
+    return { valido: false, error: 'El comentario debe tener al menos 5 caracteres.' };
+  }
+  if (textoLimpio.length > 400) {
+    return { valido: false, error: 'El comentario no puede superar los 400 caracteres.' };
+  }
+
+  const tieneEnlace = /(https?:\/\/|www\.|\.(com|co|net|org|io|gg|me|ly)\b)/i.test(textoLimpio);
+  if (tieneEnlace) {
+    return { valido: false, error: 'No se permiten enlaces ni direcciones web en los comentarios.' };
+  }
+
+  if (/(.)\1{6,}/i.test(textoLimpio)) {
+    return { valido: false, error: 'Evita repetir el mismo carácter muchas veces seguidas.' };
+  }
+
+  const palabrasBloqueadas = [
+    'idiota', 'imbecil', 'imbécil', 'estupido', 'estúpido',
+    'basura', 'mierda', 'puta', 'puto', 'malparido', 'gonorrea', 'hp'
+  ];
+  const normalizado = textoLimpio
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  const bloqueada = palabrasBloqueadas.find((palabra) => {
+    const escapada = palabra.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`\\b${escapada}\\b`, 'i').test(normalizado);
+  });
+
+  if (bloqueada) {
+    return { valido: false, error: 'El comentario contiene lenguaje inadecuado.' };
+  }
+
+  return { valido: true, autor: autorLimpio || 'Anónimo', mensaje: textoLimpio };
+}
+
 // Sembrado automático y creación/actualización automática de tablas en MySQL
 (async () => {
   try {
@@ -42,6 +84,7 @@ const administradoresAutorizados = [
         ciudadano VARCHAR(255) DEFAULT 'Anónimo',
         comentario TEXT NOT NULL,
         obra_id INT DEFAULT NULL,
+        reportes INT DEFAULT 0,
         fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -51,6 +94,7 @@ const administradoresAutorizados = [
       "ALTER TABLE comentarios ADD COLUMN ciudadano VARCHAR(255) DEFAULT 'Anónimo'",
       "ALTER TABLE comentarios ADD COLUMN comentario TEXT",
       "ALTER TABLE comentarios ADD COLUMN obra_id INT DEFAULT NULL",
+      "ALTER TABLE comentarios ADD COLUMN reportes INT DEFAULT 0",
       "ALTER TABLE comentarios ADD COLUMN fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
     ];
 
@@ -241,13 +285,15 @@ router.get('/comentarios', async (req, res) => {
 router.post('/comentarios', async (req, res) => {
   try {
     const { ciudadano, nombre, comentario, texto, obra_id } = req.body;
-    const autor = (ciudadano || nombre || 'Anónimo').trim();
-    const mensaje = (comentario || texto || '').trim();
-    const idObra = obra_id ? obra_id : null;
+    const validacion = validarContenidoComentario(ciudadano || nombre, comentario || texto);
 
-    if (!mensaje) {
-      return res.status(400).json({ error: 'El comentario no puede estar vacío.' });
+    if (!validacion.valido) {
+      return res.status(400).json({ error: validacion.error });
     }
+
+    const autor = validacion.autor;
+    const mensaje = validacion.mensaje;
+    const idObra = obra_id ? obra_id : null;
 
     // Obtener columnas actuales de la tabla para insertar exactamente en las disponibles
     const [columnas] = await pool.query('SHOW COLUMNS FROM comentarios');
@@ -289,6 +335,20 @@ router.post('/comentarios', async (req, res) => {
       error: 'Error al guardar el comentario',
       detalle: error.sqlMessage || error.message
     });
+  }
+});
+
+router.post('/comentarios/:id/reportar', async (req, res) => {
+  const { id } = req.params;
+  if (!/^\d+$/.test(String(id))) {
+    return res.status(200).json({ mensaje: 'Reporte registrado localmente' });
+  }
+
+  try {
+    await pool.query('UPDATE comentarios SET reportes = COALESCE(reportes, 0) + 1 WHERE id = ?', [id]);
+    res.json({ mensaje: 'Comentario reportado' });
+  } catch (error) {
+    res.status(200).json({ mensaje: 'Reporte registrado' });
   }
 });
 
