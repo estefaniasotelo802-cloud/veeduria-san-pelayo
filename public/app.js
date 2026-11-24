@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
 let mapaGlobal = null;
 const marcadoresObras = {};
 let zoomTextoActual = 100;
+let accTamanoPx = 16;
 
 function escaparHTML(texto) {
     return String(texto || '')
@@ -387,10 +388,78 @@ function toggleAccMenu() {
     if (oculto) {
         panel.removeAttribute('hidden');
         if (btn) btn.setAttribute('aria-expanded', 'true');
+        actualizarEtiquetaPx();
     } else {
         panel.setAttribute('hidden', '');
         if (btn) btn.setAttribute('aria-expanded', 'false');
     }
+}
+
+function cambiarTabAccesibilidad(nombreTab) {
+    document.querySelectorAll('.acc-tab').forEach((tab) => {
+        tab.classList.toggle('is-active', tab.dataset.accTab === nombreTab);
+    });
+    document.querySelectorAll('.acc-tab-content').forEach((panel) => {
+        panel.classList.toggle('is-active', panel.dataset.accPanel === nombreTab);
+    });
+}
+
+function actualizarEtiquetaPx() {
+    const label = document.getElementById('accTamanoLabel');
+    if (label) {
+        label.textContent = `${accTamanoPx}px`;
+    }
+}
+
+function ajustarTamanoPx(deltaPx) {
+    accTamanoPx = Math.min(26, Math.max(12, accTamanoPx + deltaPx));
+    document.documentElement.style.fontSize = `${accTamanoPx}px`;
+    actualizarEtiquetaPx();
+    try {
+        localStorage.setItem('veeduriaTamanoPx', accTamanoPx);
+    } catch (e) {}
+}
+
+function toggleAltoContraste(activado) {
+    setModoAccesibilidad(activado ? 'contraste' : 'normal');
+}
+
+function sincronizarLecturaFacil(activado) {
+    const checkTexto = document.getElementById('switchLecturaFacil');
+    const checkCog = document.getElementById('switchCognitivaFacil');
+    if (checkTexto) checkTexto.checked = activado;
+    if (checkCog) checkCog.checked = activado;
+
+    document.body.classList.toggle('acc-lectura-facil', activado);
+    document.documentElement.classList.toggle('acc-lectura-facil', activado);
+    try {
+        localStorage.setItem('veeduria_acc-lectura-facil', activado ? '1' : '0');
+    } catch (e) {}
+}
+
+function restablecerAccesibilidad() {
+    accTamanoPx = 16;
+    zoomTextoActual = 100;
+    document.documentElement.style.fontSize = '';
+    actualizarEtiquetaPx();
+
+    document.body.classList.remove('acc-lectura-facil', 'acc-resaltar-enlaces');
+    document.documentElement.classList.remove('acc-lectura-facil', 'acc-resaltar-enlaces');
+
+    ['switchLecturaFacil', 'switchResaltarEnlaces', 'switchAltoContraste', 'switchCognitivaFacil'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.checked = false;
+    });
+
+    setModoAccesibilidad('normal');
+    detenerLectura();
+
+    try {
+        localStorage.removeItem('veeduriaTamanoPx');
+        localStorage.removeItem('veeduriaZoomTexto');
+        localStorage.removeItem('veeduria_acc-lectura-facil');
+        localStorage.removeItem('veeduria_acc-resaltar-enlaces');
+    } catch (e) {}
 }
 
 function leerPaginaEnVozAlta() {
@@ -421,28 +490,48 @@ function detenerLectura() {
 function cambiarTamanoTexto(cambio) {
     if (cambio === 0) {
         zoomTextoActual = 100;
+        accTamanoPx = 16;
+        document.documentElement.style.fontSize = '';
     } else {
         zoomTextoActual = Math.min(140, Math.max(80, zoomTextoActual + cambio));
+        accTamanoPx = Math.round((16 * zoomTextoActual) / 100);
+        document.documentElement.style.fontSize = zoomTextoActual + '%';
     }
-    document.documentElement.style.fontSize = zoomTextoActual + '%';
+    actualizarEtiquetaPx();
     try {
         localStorage.setItem('veeduriaZoomTexto', zoomTextoActual);
+        localStorage.setItem('veeduriaTamanoPx', accTamanoPx);
     } catch (e) {}
 }
 
 function toggleOpcionExtra(claseCss, idBoton, forzarEstado = null) {
+    const control = document.getElementById(idBoton);
     let activo;
+
     if (typeof forzarEstado === 'boolean') {
-        document.body.classList.toggle(claseCss, forzarEstado);
-        document.documentElement.classList.toggle(claseCss, forzarEstado);
         activo = forzarEstado;
+    } else if (control && control.type === 'checkbox') {
+        activo = control.checked;
     } else {
-        activo = document.body.classList.toggle(claseCss);
-        document.documentElement.classList.toggle(claseCss, activo);
+        activo = !document.body.classList.contains(claseCss);
     }
 
-    const btn = document.getElementById(idBoton);
-    if (btn) btn.classList.toggle('activo', activo);
+    document.body.classList.toggle(claseCss, activo);
+    document.documentElement.classList.toggle(claseCss, activo);
+
+    if (control && control.type === 'checkbox') {
+        control.checked = activo;
+    } else if (control) {
+        control.classList.toggle('activo', activo);
+    }
+
+    if (claseCss === 'acc-lectura-facil') {
+        const checkTexto = document.getElementById('switchLecturaFacil');
+        const checkCog = document.getElementById('switchCognitivaFacil');
+        if (checkTexto) checkTexto.checked = activo;
+        if (checkCog) checkCog.checked = activo;
+    }
+
     try {
         localStorage.setItem('veeduria_' + claseCss, activo ? '1' : '0');
     } catch (e) {}
@@ -462,8 +551,11 @@ function setModoAccesibilidad(modo) {
         root.classList.add('acc-' + modoValido);
     }
 
-    const selector = document.querySelector('#accMenuPanel .acc-select');
+    const selector = document.querySelector('#accMenuPanel .acc-select, #accModoColorSelect');
     if (selector) selector.value = modoValido;
+
+    const switchContraste = document.getElementById('switchAltoContraste');
+    if (switchContraste) switchContraste.checked = modoValido === 'contraste';
 
     try {
         localStorage.setItem('modoAccesibilidadVeeduria', modoValido);
@@ -485,17 +577,25 @@ function inicializarAccesibilidad() {
         const modo = localStorage.getItem('modoAccesibilidadVeeduria') || 'normal';
         setModoAccesibilidad(modo);
 
-        const zoom = parseInt(localStorage.getItem('veeduriaZoomTexto'), 10);
-        if (zoom && zoom >= 80 && zoom <= 140) {
-            zoomTextoActual = zoom;
-            document.documentElement.style.fontSize = zoomTextoActual + '%';
+        const pxGuardado = parseInt(localStorage.getItem('veeduriaTamanoPx'), 10);
+        if (pxGuardado && pxGuardado >= 12 && pxGuardado <= 26) {
+            accTamanoPx = pxGuardado;
+            document.documentElement.style.fontSize = `${accTamanoPx}px`;
+        } else {
+            const zoom = parseInt(localStorage.getItem('veeduriaZoomTexto'), 10);
+            if (zoom && zoom >= 80 && zoom <= 140) {
+                zoomTextoActual = zoom;
+                accTamanoPx = Math.round((16 * zoomTextoActual) / 100);
+                document.documentElement.style.fontSize = zoomTextoActual + '%';
+            }
         }
+        actualizarEtiquetaPx();
 
         if (localStorage.getItem('veeduria_acc-lectura-facil') === '1') {
-            toggleOpcionExtra('acc-lectura-facil', 'btnLecturaFacil', true);
+            toggleOpcionExtra('acc-lectura-facil', 'switchLecturaFacil', true);
         }
         if (localStorage.getItem('veeduria_acc-resaltar-enlaces') === '1') {
-            toggleOpcionExtra('acc-resaltar-enlaces', 'btnResaltarEnlaces', true);
+            toggleOpcionExtra('acc-resaltar-enlaces', 'switchResaltarEnlaces', true);
         }
     } catch (e) {}
 }

@@ -182,36 +182,157 @@
       </svg>
     </button>
 
-    <div id="accMenuPanel" class="acc-panel" hidden>
-      <div class="acc-row">
-        <button type="button" onclick="leerPaginaEnVozAlta()">Leer voz</button>
-        <button type="button" onclick="detenerLectura()">Parar voz</button>
+    <div id="accMenuPanel" class="acc-panel-v2" hidden>
+      <!-- Encabezado con insignia y botón Restablecer -->
+      <div class="acc-v2-header">
+        <div class="acc-v2-brand">
+          <span class="acc-v2-badge">A+</span>
+          <span>Accesibilidad</span>
+        </div>
+        <button type="button" class="acc-reset-link" onclick="restablecerAccesibilidad()">
+          Restablecer
+        </button>
       </div>
 
-      <div class="acc-row">
-        <button type="button" onclick="cambiarTamanoTexto(-10)" aria-label="Disminuir letra">A-</button>
-        <button type="button" onclick="cambiarTamanoTexto(0)" aria-label="Letra normal">A</button>
-        <button type="button" onclick="cambiarTamanoTexto(10)" aria-label="Aumentar letra">A+</button>
+      <!-- Barra de pestañas -->
+      <div class="acc-tabs" role="tablist" aria-label="Categorías de accesibilidad">
+        <button type="button" class="acc-tab is-active" data-acc-tab="texto" onclick="cambiarTabAccesibilidad('texto')">
+          <span class="acc-tab-icon">T</span>
+          <span>Texto</span>
+        </button>
+        <button type="button" class="acc-tab" data-acc-tab="visual" onclick="cambiarTabAccesibilidad('visual')">
+          <span class="acc-tab-icon">👁</span>
+          <span>Visual</span>
+        </button>
+        <button type="button" class="acc-tab" data-acc-tab="color" onclick="cambiarTabAccesibilidad('color')">
+          <span class="acc-tab-icon">◐</span>
+          <span>Color</span>
+        </button>
+        <button type="button" class="acc-tab" data-acc-tab="cognitiva" onclick="cambiarTabAccesibilidad('cognitiva')">
+          <span class="acc-tab-icon">?</span>
+          <span>Cognitiva</span>
+        </button>
+        <button type="button" class="acc-tab" data-acc-tab="voz" onclick="cambiarTabAccesibilidad('voz')">
+          <span class="acc-tab-icon">🔊</span>
+          <span>Voz</span>
+        </button>
       </div>
 
-      <button type="button" id="btnLecturaFacil" onclick="toggleOpcionExtra('acc-lectura-facil', 'btnLecturaFacil')">
-        Lectura fácil (dislexia)
-      </button>
-      <button type="button" id="btnResaltarEnlaces" onclick="toggleOpcionExtra('acc-resaltar-enlaces', 'btnResaltarEnlaces')">
-        Resaltar enlaces
-      </button>
+      <!-- Pestaña 1: TEXTO -->
+      <div class="acc-tab-content is-active" data-acc-panel="texto">
+        <div class="acc-section-label">TAMAÑO</div>
+        <div class="acc-size-box">
+          <button type="button" class="acc-step-btn" onclick="ajustarTamanoPx(-2)" aria-label="Disminuir tamaño de letra">
+            &minus;
+          </button>
+          <span id="accTamanoLabel" class="acc-size-value">16px</span>
+          <button type="button" class="acc-step-btn" onclick="ajustarTamanoPx(2)" aria-label="Aumentar tamaño de letra">
+            +
+          </button>
+        </div>
 
-      <select
-        aria-label="Modo de color y contraste"
-        class="acc-select"
-        onchange="setModoAccesibilidad(this.value)"
-      >
-        <option value="normal">Color: Normal</option>
-        <option value="deuteranopia">Daltonismo: Verde</option>
-        <option value="protanopia">Daltonismo: Rojo</option>
-        <option value="tritanopia">Daltonismo: Azul</option>
-        <option value="contraste">Alto contraste</option>
-      </select>
+        <div class="acc-section-label">ESTILO</div>
+
+        <label class="acc-switch-row" for="switchLecturaFacil">
+          <span class="acc-switch-left">
+            <span class="acc-row-icon">T</span>
+            <span class="acc-row-text">Lectura fácil (dislexia)</span>
+          </span>
+          <input
+            type="checkbox"
+            id="switchLecturaFacil"
+            class="acc-switch-input"
+            onchange="toggleOpcionExtra('acc-lectura-facil', 'switchLecturaFacil')"
+          >
+          <span class="acc-switch-slider" aria-hidden="true"></span>
+        </label>
+
+        <label class="acc-switch-row" for="switchResaltarEnlaces">
+          <span class="acc-switch-left">
+            <span class="acc-row-icon">⋈</span>
+            <span class="acc-row-text">Resaltar enlaces</span>
+          </span>
+          <input
+            type="checkbox"
+            id="switchResaltarEnlaces"
+            class="acc-switch-input"
+            onchange="toggleOpcionExtra('acc-resaltar-enlaces', 'switchResaltarEnlaces')"
+          >
+          <span class="acc-switch-slider" aria-hidden="true"></span>
+        </label>
+      </div>
+
+      <!-- Pestaña 2: VISUAL -->
+      <div class="acc-tab-content" data-acc-panel="visual">
+        <div class="acc-section-label">CONTRASTE Y LECTURA</div>
+
+        <label class="acc-switch-row" for="switchAltoContraste">
+          <span class="acc-switch-left">
+            <span class="acc-row-icon">◐</span>
+            <span class="acc-row-text">Alto contraste</span>
+          </span>
+          <input
+            type="checkbox"
+            id="switchAltoContraste"
+            class="acc-switch-input"
+            onchange="toggleAltoContraste(this.checked)"
+          >
+          <span class="acc-switch-slider" aria-hidden="true"></span>
+        </label>
+
+        <button type="button" class="acc-action-pill" onclick="cambiarTamanoTexto(0); actualizarEtiquetaPx();">
+          Restablecer tamaño de letra (16px)
+        </button>
+      </div>
+
+      <!-- Pestaña 3: COLOR -->
+      <div class="acc-tab-content" data-acc-panel="color">
+        <div class="acc-section-label">MODO DE COLOR</div>
+        <select
+          id="accModoColorSelect"
+          aria-label="Modo de color y contraste"
+          class="acc-select-v2"
+          onchange="setModoAccesibilidad(this.value)"
+        >
+          <option value="normal">Color: Normal</option>
+          <option value="deuteranopia">Daltonismo: Verde</option>
+          <option value="protanopia">Daltonismo: Rojo</option>
+          <option value="tritanopia">Daltonismo: Azul</option>
+          <option value="contraste">Alto contraste</option>
+        </select>
+      </div>
+
+      <!-- Pestaña 4: COGNITIVA -->
+      <div class="acc-tab-content" data-acc-panel="cognitiva">
+        <div class="acc-section-label">APOYO A LA LECTURA</div>
+
+        <label class="acc-switch-row" for="switchCognitivaFacil">
+          <span class="acc-switch-left">
+            <span class="acc-row-icon">?</span>
+            <span class="acc-row-text">Lectura fácil (dislexia)</span>
+          </span>
+          <input
+            type="checkbox"
+            id="switchCognitivaFacil"
+            class="acc-switch-input"
+            onchange="sincronizarLecturaFacil(this.checked)"
+          >
+          <span class="acc-switch-slider" aria-hidden="true"></span>
+        </label>
+      </div>
+
+      <!-- Pestaña 5: VOZ -->
+      <div class="acc-tab-content" data-acc-panel="voz">
+        <div class="acc-section-label">LECTOR DE PANTALLA</div>
+        <div class="acc-voice-grid">
+          <button type="button" class="acc-voice-btn primary" onclick="leerPaginaEnVozAlta()">
+            Leer voz
+          </button>
+          <button type="button" class="acc-voice-btn secondary" onclick="detenerLectura()">
+            Parar voz
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
