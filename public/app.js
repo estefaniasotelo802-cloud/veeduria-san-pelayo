@@ -279,26 +279,35 @@ function obtenerIniciales(nombre) {
 }
 
 async function reportarComentario(claveComentario, boton) {
-    const reportes = obtenerReportesGuardados();
-    const actual = Number(reportes[claveComentario] || 0) + 1;
-    reportes[claveComentario] = actual;
-    guardarReportes(reportes);
+    const reportesLocales = obtenerReportesGuardados();
+    const marcadoLocal = Number(reportesLocales[claveComentario] || 0) + 1;
+    reportesLocales[claveComentario] = marcadoLocal;
+    guardarReportes(reportesLocales);
 
     if (boton) {
         boton.disabled = true;
-        boton.textContent = actual >= 3 ? 'Oculto por reportes' : 'Reportado';
+        boton.textContent = 'Reportado';
     }
 
-    // Intento opcional de notificar al backend si existe endpoint
     try {
-        await fetch(`/obras/comentarios/${encodeURIComponent(claveComentario)}/reportar`, {
-            method: 'POST'
+        const respuesta = await fetch(`/obras/comentarios/${encodeURIComponent(claveComentario)}/reportar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
         });
+
+        if (respuesta.ok) {
+            const datos = await respuesta.json().catch(() => ({}));
+            const totalBD = Number(datos.reportes ?? 0);
+            if (totalBD >= 3 || datos.oculto) {
+                reportesLocales[claveComentario] = Math.max(marcadoLocal, totalBD);
+                guardarReportes(reportesLocales);
+            }
+        }
     } catch (e) {
-        // Si el backend aún no tiene esta ruta, el reporte local sigue funcionando
+        console.error('No se pudo registrar el reporte en el servidor:', e);
     }
 
-    cargarComentariosPublicos();
+    await cargarComentariosPublicos();
 }
 
 async function cargarComentariosPublicos() {
@@ -308,7 +317,7 @@ async function cargarComentariosPublicos() {
     try {
         const respuesta = await fetch('/obras/comentarios');
         const comentarios = await respuesta.json();
-        const reportes = obtenerReportesGuardados();
+        const reportesLocales = obtenerReportesGuardados();
 
         contenedorComentarios.innerHTML = '';
 
@@ -317,10 +326,13 @@ async function cargarComentariosPublicos() {
             return;
         }
 
-        // Si acumula 3 o más reportes ciudadanos, se oculta automáticamente sin sobrecargar al admin
+        // Lee el total de reportes desde MySQL (c.reportes) para ocultar a partir de 3 reportes en todos los dispositivos
         const comentariosVisibles = comentarios.filter((c, idx) => {
             const clave = String(c.id ?? `${c.ciudadano || c.nombre || 'anon'}-${c.fecha || idx}`);
-            return Number(reportes[clave] || 0) < 3;
+            const reportesBD = Number(c.reportes ?? c.total_reportes ?? 0);
+            const reportesDispositivo = Number(reportesLocales[clave] || 0);
+            const totalReportes = Math.max(reportesBD, reportesDispositivo);
+            return totalReportes < 3;
         });
 
         if (comentariosVisibles.length === 0) {
@@ -335,7 +347,7 @@ async function cargarComentariosPublicos() {
             const fechaFormateada = c.fecha ? new Date(c.fecha).toLocaleDateString() : 'Reciente';
             const obraInfo = c.obra_nombre ? `<div style="font-size: 12px; color: #0284c7; margin-top: 2px;">Obra: ${escaparHTML(c.obra_nombre)}</div>` : '';
             const clave = String(c.id ?? `${autor}-${c.fecha || idx}`);
-            const yaReportado = Number(reportes[clave] || 0) > 0;
+            const yaReportadoEnDispositivo = Number(reportesLocales[clave] || 0) > 0;
 
             const divComentario = document.createElement('div');
             divComentario.className = 'comentario-item';
@@ -352,15 +364,15 @@ async function cargarComentariosPublicos() {
                         <button
                             type="button"
                             class="btn-reportar-comentario"
-                            ${yaReportado ? 'disabled' : ''}
-                            style="width: auto; padding: 4px 10px; font-size: 0.76rem; border-radius: 999px; background: ${yaReportado ? '#e2e8f0' : 'transparent'}; color: ${yaReportado ? '#64748b' : '#64748b'}; border: 1px solid #cbd5e1; box-shadow: none;"
-                        >${yaReportado ? 'Reportado' : 'Reportar'}</button>
+                            ${yaReportadoEnDispositivo ? 'disabled' : ''}
+                            style="width: auto; padding: 4px 10px; font-size: 0.76rem; border-radius: 999px; background: ${yaReportadoEnDispositivo ? '#e2e8f0' : 'transparent'}; color: #64748b; border: 1px solid #cbd5e1; box-shadow: none;"
+                        >${yaReportadoEnDispositivo ? 'Reportado' : 'Reportar'}</button>
                     </div>
                 </div>
             `;
 
             const btnReportar = divComentario.querySelector('.btn-reportar-comentario');
-            if (btnReportar && !yaReportado) {
+            if (btnReportar && !yaReportadoEnDispositivo) {
                 btnReportar.addEventListener('click', () => reportarComentario(clave, btnReportar));
             }
 

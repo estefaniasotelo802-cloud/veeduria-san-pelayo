@@ -69,7 +69,7 @@ async function cargarComentariosAdmin() {
     try {
         const respuesta = await fetch('/obras/comentarios');
         const comentarios = await respuesta.json();
-        const reportes = obtenerReportesCiudadanos();
+        const reportesLocales = obtenerReportesCiudadanos();
 
         tablaComentariosAdmin.innerHTML = '';
 
@@ -82,7 +82,9 @@ async function cargarComentariosAdmin() {
             .map((c, idx) => {
                 const autor = c.ciudadano || c.nombre || 'Anónimo';
                 const clave = String(c.id ?? `${autor}-${c.fecha || idx}`);
-                const cantidadReportes = Number(reportes[clave] || 0);
+                const reportesBD = Number(c.reportes ?? c.total_reportes ?? 0);
+                const reportesDispositivo = Number(reportesLocales[clave] || 0);
+                const cantidadReportes = Math.max(reportesBD, reportesDispositivo);
                 return { comentarioObj: c, clave, cantidadReportes };
             })
             .filter(item => item.cantidadReportes > 0);

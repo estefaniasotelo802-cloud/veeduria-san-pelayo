@@ -341,14 +341,22 @@ router.post('/comentarios', async (req, res) => {
 router.post('/comentarios/:id/reportar', async (req, res) => {
   const { id } = req.params;
   if (!/^\d+$/.test(String(id))) {
-    return res.status(200).json({ mensaje: 'Reporte registrado localmente' });
+    return res.status(200).json({ mensaje: 'Reporte registrado localmente', reportes: 0, oculto: false });
   }
 
   try {
     await pool.query('UPDATE comentarios SET reportes = COALESCE(reportes, 0) + 1 WHERE id = ?', [id]);
-    res.json({ mensaje: 'Comentario reportado' });
+    const [filas] = await pool.query('SELECT reportes FROM comentarios WHERE id = ?', [id]);
+    const totalReportes = filas.length > 0 ? Number(filas[0].reportes || 0) : 0;
+
+    res.json({
+      mensaje: 'Comentario reportado',
+      reportes: totalReportes,
+      oculto: totalReportes >= 3
+    });
   } catch (error) {
-    res.status(200).json({ mensaje: 'Reporte registrado' });
+    console.error('Error al registrar reporte en MySQL:', error);
+    res.status(200).json({ mensaje: 'Reporte registrado', reportes: 0, oculto: false });
   }
 });
 
