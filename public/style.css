@@ -823,13 +823,25 @@ body.admin-body {
 .admin-header {
   background: transparent !important;
   color: white;
-  padding: 40px 20px;
+  padding: 28px 20px 16px;
   box-shadow: none;
 }
 
 .admin-header-container {
   max-width: 960px !important;
   width: 100%;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+  background: rgba(15, 23, 42, 0.82);
+  backdrop-filter: blur(8px);
+  padding: 18px 24px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
 }
 
 .admin-header-title {
@@ -875,7 +887,7 @@ body.admin-body {
 .admin-main {
   max-width: 960px !important;
   width: 100%;
-  margin: -10px auto 40px auto !important;
+  margin: 0 auto 40px auto !important;
   padding: 0 20px;
   position: relative;
   z-index: 10;
@@ -888,7 +900,8 @@ body.admin-body {
   color: #ffffff !important;
   margin-bottom: 0;
   align-self: flex-start;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  font-weight: 600;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.65);
 }
 
 .admin-grid {
@@ -908,7 +921,16 @@ body.admin-body {
   width: 100% !important;
   max-width: 100% !important;
   margin: 0 !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 28px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-top: 5px solid var(--secondary-navy);
   min-width: 0;
+  color: #334155;
 }
 
 .admin-card h2 {
