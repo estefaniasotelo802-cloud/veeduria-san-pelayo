@@ -26,100 +26,94 @@
     <main class="admin-main">
         <a href="/" class="back-link">← Volver al Portal Público</a>
 
-        <div class="admin-grid">
-            <!-- Columna izquierda: Registro de obra -->
-            <div class="admin-card">
-                <h2 id="formTitle">Registrar Nueva Obra</h2>
-                <form id="formObra">
-                    <!-- Campo oculto para saber si estamos editando una obra existente -->
-                    <input type="hidden" id="obraId">
+        <div class="admin-card">
+            <h2 id="formTitle">Registrar Nueva Obra</h2>
+            <form id="formObra">
+                <!-- Campo oculto para saber si estamos editando una obra existente -->
+                <input type="hidden" id="obraId">
 
-                    <div class="form-group-admin">
-                        <label for="nombre">Nombre de la Obra:</label>
-                        <input type="text" id="nombre" required placeholder="Ej. Pavimentación vía principal...">
-                    </div>
-                    
-                    <div class="form-group-admin">
-                        <label for="sector">Sector / Vereda:</label>
-                        <input type="text" id="sector" required placeholder="Ej. Pelayito / Carrillo">
-                    </div>
+                <div class="form-group-admin">
+                    <label for="nombre">Nombre de la Obra:</label>
+                    <input type="text" id="nombre" required placeholder="Ej. Pavimentación vía principal...">
+                </div>
+                
+                <div class="form-group-admin">
+                    <label for="sector">Sector / Vereda:</label>
+                    <input type="text" id="sector" required placeholder="Ej. Pelayito / Carrillo">
+                </div>
 
-                    <div class="form-group-admin">
-                        <label for="presupuesto">Presupuesto ($):</label>
-                        <input type="text" id="presupuesto" required placeholder="Ej. 1000000000">
-                    </div>
+                <div class="form-group-admin">
+                    <label for="presupuesto">Presupuesto ($):</label>
+                    <input type="text" id="presupuesto" required placeholder="Ej. 1000000000">
+                </div>
 
-                    <div class="form-group-admin">
-                        <label for="estado">Estado:</label>
-                        <select id="estado" required>
-                            <option value="En ejecución">En ejecución</option>
-                            <option value="En pruebas técnicas">En pruebas técnicas</option>
-                            <option value="Mitigación finalizada">Mitigación finalizada</option>
-                            <option value="Planeación">Planeación</option>
-                        </select>
-                    </div>
+                <div class="form-group-admin">
+                    <label for="estado">Estado:</label>
+                    <select id="estado" required>
+                        <option value="En ejecución">En ejecución</option>
+                        <option value="En pruebas técnicas">En pruebas técnicas</option>
+                        <option value="Mitigación finalizada">Mitigación finalizada</option>
+                        <option value="Planeación">Planeación</option>
+                    </select>
+                </div>
 
-                    <div class="form-group-admin">
-                        <label for="avance_porcentaje">Porcentaje de Avance (%):</label>
-                        <input type="number" id="avance_porcentaje" min="0" max="100" required placeholder="Ej. 50">
-                    </div>
+                <div class="form-group-admin">
+                    <label for="avance_porcentaje">Porcentaje de Avance (%):</label>
+                    <input type="number" id="avance_porcentaje" min="0" max="100" required placeholder="Ej. 50">
+                </div>
 
-                    <!-- Campos de Fecha de Inicio y Fecha Final -->
-                    <div class="form-group-admin">
-                        <label for="fecha_inicio">Fecha de Inicio:</label>
-                        <input type="date" id="fecha_inicio" required>
-                    </div>
+                <!-- Campos de Fecha de Inicio y Fecha Final -->
+                <div class="form-group-admin">
+                    <label for="fecha_inicio">Fecha de Inicio:</label>
+                    <input type="date" id="fecha_inicio" required>
+                </div>
 
-                    <div class="form-group-admin">
-                        <label for="fecha_fin">Fecha Final (Estimada):</label>
-                        <input type="date" id="fecha_fin" required>
-                    </div>
+                <div class="form-group-admin">
+                    <label for="fecha_fin">Fecha Final (Estimada):</label>
+                    <input type="date" id="fecha_fin" required>
+                </div>
 
-                    <button type="submit" id="btnSubmitForm" class="btn-submit">Guardar Nueva Obra</button>
-                </form>
+                <button type="submit" id="btnSubmitForm" class="btn-submit">Guardar Nueva Obra</button>
+            </form>
+        </div>
+
+        <div class="admin-card">
+            <h2>Obras Registradas (Gestión)</h2>
+            <div style="overflow-x: auto;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Sector</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaAdminBody">
+                        <!-- Se llena dinámicamente desde admin.js -->
+                    </tbody>
+                </table>
             </div>
+        </div>
 
-            <!-- Columna derecha: Gestión de obras y moderación de comentarios -->
-            <div class="admin-col-derecha">
-                <div class="admin-card">
-                    <h2>Obras Registradas (Gestión)</h2>
-                    <div style="overflow-x: auto;">
-                        <table class="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nombre</th>
-                                    <th>Sector</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tablaAdminBody">
-                                <!-- Se llena dinámicamente desde admin.js -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Sección de Moderación de Comentarios -->
-                <div class="admin-card">
-                    <h2>Moderación de Comentarios Ciudadanos</h2>
-                    <div style="overflow-x: auto;">
-                        <table class="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Ciudadano / Obra</th>
-                                    <th>Comentario</th>
-                                    <th>Fecha</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tablaComentariosAdmin">
-                                <!-- Se llena dinámicamente desde admin.js -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        <!-- Sección de Moderación de Comentarios -->
+        <div class="admin-card">
+            <h2>Moderación de Comentarios Ciudadanos</h2>
+            <div style="overflow-x: auto;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Ciudadano / Obra</th>
+                            <th>Comentario</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaComentariosAdmin">
+                        <!-- Se llena dinámicamente desde admin.js -->
+                    </tbody>
+                </table>
             </div>
         </div>
     </main>
