@@ -1482,20 +1482,20 @@ html.acc-contraste {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  background: rgba(8, 175, 230, 0.22) !important;
+  background: rgba(245, 158, 11, 0.24) !important;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  color: #e0f2fe !important;
-  border: 1px solid rgba(125, 211, 252, 0.55);
+  color: #fef3c7 !important;
+  border: 1px solid rgba(253, 230, 138, 0.55);
   padding: 4px 10px;
   border-radius: 999px;
   margin-bottom: 6px;
 }
 
 .galeria-modal-texto .galeria-tag {
-  background: #e0f2fe !important;
-  color: #0369a1 !important;
-  border-color: #7dd3fc;
+  background: #fef3c7 !important;
+  color: #92400e !important;
+  border-color: #fcd34d;
 }
 
 .galeria-card-body h3 {
@@ -1628,7 +1628,7 @@ html.acc-contraste {
 }
 
 .galeria-cerrar:hover {
-  background: #08afe6 !important;
+  background: #b45309 !important;
   border-color: #ffffff !important;
   color: #ffffff !important;
 }
