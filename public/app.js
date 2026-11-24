@@ -643,9 +643,13 @@ function inicializarGaleria() {
 
     function abrirFotoModal(foto) {
         if (!modal) return;
+        const catEl = document.getElementById('modalCategoria');
         document.getElementById('modalImagen').src = foto.imagen;
         document.getElementById('modalImagen').alt = foto.titulo;
-        document.getElementById('modalCategoria').textContent = foto.etiqueta;
+        if (catEl) {
+            catEl.textContent = '';
+            catEl.style.display = 'none';
+        }
         document.getElementById('modalTitulo').textContent = foto.titulo;
         document.getElementById('modalDescripcion').textContent = foto.descripcion;
         modal.removeAttribute('hidden');
@@ -673,7 +677,6 @@ function inicializarGaleria() {
             card.innerHTML = `
                 <img src="${foto.imagen}" alt="${foto.titulo}" loading="lazy">
                 <div class="galeria-card-body">
-                    <span class="galeria-tag">${foto.etiqueta}</span>
                     <h3>${foto.titulo}</h3>
                     <p>${foto.descripcion}</p>
                 </div>

@@ -1467,10 +1467,8 @@ html.acc-contraste {
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 14px 16px;
+  padding: 16px;
   color: #ffffff;
-  opacity: 0.92;
-  transition: opacity 0.25s ease;
   z-index: 2;
 }
 
@@ -1478,29 +1476,29 @@ html.acc-contraste {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  background: rgba(245, 158, 11, 0.24) !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #fef3c7 !important;
-  border: 1px solid rgba(253, 230, 138, 0.55);
-  padding: 4px 10px;
+  background: #508c46 !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  padding: 4px 11px;
   border-radius: 999px;
   margin-bottom: 6px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.22);
 }
 
 .galeria-modal-texto .galeria-tag {
-  background: #fef3c7 !important;
-  color: #92400e !important;
-  border-color: #fcd34d;
+  background: #508c46 !important;
+  color: #ffffff !important;
+  border-color: transparent;
 }
 
 .galeria-card-body h3 {
-  margin: 0 0 4px 0;
-  font-size: 1rem;
+  margin: 0 0 6px 0;
+  font-size: 1.02rem;
+  font-weight: 700;
   color: #ffffff;
   line-height: 1.25;
 }
@@ -1509,9 +1507,10 @@ html.acc-contraste {
   margin: 0;
   font-size: 0.84rem;
   color: #e2e8f0;
+  line-height: 1.4;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   opacity: 0;
@@ -1628,7 +1627,7 @@ html.acc-contraste {
 }
 
 .galeria-cerrar:hover {
-  background: #b45309 !important;
+  background: #508c46 !important;
   border-color: #ffffff !important;
   color: #ffffff !important;
 }
