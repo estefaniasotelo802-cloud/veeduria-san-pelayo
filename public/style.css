@@ -150,7 +150,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background: url('/fondo.puente.jpg') center 25% / cover no-repeat;
+  background: url('/fondo.puente.jpg') center/cover no-repeat;
   overflow: hidden;
 }
 
