@@ -968,20 +968,10 @@ body.login-body {
 }
 
 .login-card-wrapper,
-body.login-body .container {
-  background: rgba(255, 255, 255, 0.92) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  padding: 40px 42px;
-  border-radius: 20px;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
-  width: 100%;
-  max-width: 520px;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-sizing: border-box;
+body.login-body .container,
+body.login-body form {
+  max-width: 560px;
 }
-
-
 
 .login-form h2,
 .login-card h2 {
