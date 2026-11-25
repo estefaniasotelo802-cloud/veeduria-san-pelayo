@@ -1,5 +1,70 @@
 let obrasCache = [];
 
+// Coordenadas de referencia por sector o vereda en San Pelayo, Córdoba
+const COORDENADAS_SECTORES_SAN_PELAYO = {
+    'san pelayo': [8.9564, -75.8369],
+    'centro': [8.9564, -75.8369],
+    'pelayito': [8.9465, -75.8240],
+    'brisas del sinu': [8.9635, -75.8430],
+    'brisas del sinú': [8.9635, -75.8430],
+    'sabana nueva': [8.9780, -75.8175],
+    'carrillo': [8.9410, -75.8360],
+    'las guamas': [8.9320, -75.8190],
+    'bonga mella': [8.9850, -75.8520],
+    'el oco': [8.9280, -75.8450],
+    'trementino': [8.9180, -75.8280],
+    'valparaiso': [8.9690, -75.8540],
+    'valparaíso': [8.9690, -75.8540]
+};
+
+function normalizarTextoSector(texto) {
+    return String(texto || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+}
+
+async function obtenerCoordenadasPorSector(sectorTexto) {
+    const limpio = normalizarTextoSector(sectorTexto);
+    if (!limpio) {
+        return { latitud: 8.9564, longitud: -75.8369 };
+    }
+
+    // Buscar coincidencia directa o parcial en sectores conocidos (ej. "Pelayito / Carrillo")
+    for (const [clave, coords] of Object.entries(COORDENADAS_SECTORES_SAN_PELAYO)) {
+        const claveNorm = normalizarTextoSector(clave);
+        if (limpio === claveNorm || limpio.includes(claveNorm)) {
+            return { latitud: coords[0], longitud: coords[1] };
+        }
+    }
+
+    // Respaldo con geocodificación enfocada en San Pelayo, Córdoba
+    const partes = limpio.split(/[\/,-]+/).map(p => p.trim()).filter(Boolean);
+    const terminoBusqueda = `${partes[0] || limpio}, San Pelayo, Cordoba, Colombia`;
+
+    try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(terminoBusqueda)}`;
+        const resp = await fetch(url, {
+            headers: { 'Accept': 'application/json' }
+        });
+        if (resp.ok) {
+            const resultados = await resp.json();
+            if (Array.isArray(resultados) && resultados.length > 0) {
+                const lat = parseFloat(resultados[0].lat);
+                const lon = parseFloat(resultados[0].lon);
+                if (!Number.isNaN(lat) && !Number.isNaN(lon)) {
+                    return { latitud: lat, longitud: lon };
+                }
+            }
+        }
+    } catch (error) {
+        console.warn('No se pudo geocodificar el sector externamente:', error);
+    }
+
+    return { latitud: 8.9564, longitud: -75.8369 };
+}
+
 function escaparHTMLAdmin(texto) {
     return String(texto || '')
         .replace(/&/g, '&amp;')
@@ -34,9 +99,9 @@ async function cargarObrasAdmin() {
         const respuesta = await fetch('/obras');
         const obras = await respuesta.json();
         obrasCache = obras;
-        
+
         tablaAdminBody.innerHTML = '';
-        
+
         if (!Array.isArray(obras) || obras.length === 0) {
             tablaAdminBody.innerHTML = '<tr><td colspan="4" style="padding: 15px; text-align: center; color: #64748b;">No hay obras registradas aún.</td></tr>';
             return;
@@ -97,7 +162,7 @@ async function cargarComentariosAdmin() {
         comentariosReportados.forEach(({ comentarioObj: c, clave, cantidadReportes }) => {
             const fila = document.createElement('tr');
             fila.style.borderBottom = '1px solid #e2e8f0';
-            
+
             const autor = c.ciudadano || c.nombre || 'Anónimo';
             const obraTexto = c.obra_nombre ? c.obra_nombre : (c.obra_id ? 'Obra #' + c.obra_id : 'General');
             const textoComentario = c.comentario || c.texto || '';
@@ -146,7 +211,7 @@ window.prepararEdicion = function(obra) {
         btnSubmitForm.innerText = 'Actualizar Obra';
         btnSubmitForm.style.backgroundColor = '#0284c7';
     }
-    
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
@@ -194,14 +259,19 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
 
             const id = obraIdInput ? obraIdInput.value : '';
+            const sectorValor = document.getElementById('sector').value;
+            const coords = await obtenerCoordenadasPorSector(sectorValor);
+
             const datosObra = {
                 nombre: document.getElementById('nombre').value,
-                sector: document.getElementById('sector').value,
+                sector: sectorValor,
                 presupuesto: document.getElementById('presupuesto').value,
                 estado: document.getElementById('estado').value,
                 porcentaje: document.getElementById('avance_porcentaje').value,
                 fecha_inicio: document.getElementById('fecha_inicio').value,
-                fecha_fin: document.getElementById('fecha_fin').value
+                fecha_fin: document.getElementById('fecha_fin').value,
+                latitud: coords.latitud,
+                longitud: coords.longitud
             };
 
             try {
