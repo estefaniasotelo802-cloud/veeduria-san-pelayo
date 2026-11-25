@@ -1,6 +1,7 @@
 import express from 'express';
 import { pool } from '../db.js';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -16,13 +17,13 @@ const administradoresAutorizados = [
   { cedula: '7350284', passwordPlana: 'val6790' }
 ];
 
-// Filtro automático en servidor para evitar que se guarden mensajes inadecuados o spam
+// Filtro automático en servidor para evitar mensajes inadecuados o spam
 function validarContenidoComentario(autor, mensaje) {
   const autorLimpio = (autor || 'Anónimo').trim();
   const textoLimpio = (mensaje || '').trim();
 
-  if (!textoLimpio || textoLimpio.length < 5) {
-    return { valido: false, error: 'El comentario debe tener al menos 5 caracteres.' };
+  if (!textoLimpio || textoLimpio.length < 3) {
+    return { valido: false, error: 'El comentario debe tener al menos 3 caracteres.' };
   }
   if (textoLimpio.length > 400) {
     return { valido: false, error: 'El comentario no puede superar los 400 caracteres.' };
@@ -61,7 +62,6 @@ function validarContenidoComentario(autor, mensaje) {
 // Sembrado automático y creación/actualización automática de tablas en MySQL
 (async () => {
   try {
-    // Asegurar tabla obras con todas sus columnas necesarias
     await pool.query(`
       CREATE TABLE IF NOT EXISTS obras (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -77,23 +77,35 @@ function validarContenidoComentario(autor, mensaje) {
       )
     `);
 
-    // Asegurar tabla comentarios
     await pool.query(`
       CREATE TABLE IF NOT EXISTS comentarios (
         id INT AUTO_INCREMENT PRIMARY KEY,
         ciudadano VARCHAR(255) DEFAULT 'Anónimo',
         comentario TEXT NOT NULL,
         obra_id INT DEFAULT NULL,
+        parent_id INT DEFAULT NULL,
+        delete_token VARCHAR(100) DEFAULT NULL,
         reportes INT DEFAULT 0,
         fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    // Asegurar que las columnas existan si la tabla fue creada anteriormente con otro esquema
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS comentario_reacciones (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        comentario_id INT NOT NULL,
+        device_id VARCHAR(100) NOT NULL,
+        emoji VARCHAR(16) NOT NULL,
+        UNIQUE KEY uniq_reaccion_dispositivo (comentario_id, device_id)
+      )
+    `);
+
     const columnasFaltantes = [
       "ALTER TABLE comentarios ADD COLUMN ciudadano VARCHAR(255) DEFAULT 'Anónimo'",
       "ALTER TABLE comentarios ADD COLUMN comentario TEXT",
       "ALTER TABLE comentarios ADD COLUMN obra_id INT DEFAULT NULL",
+      "ALTER TABLE comentarios ADD COLUMN parent_id INT DEFAULT NULL",
+      "ALTER TABLE comentarios ADD COLUMN delete_token VARCHAR(100) DEFAULT NULL",
       "ALTER TABLE comentarios ADD COLUMN reportes INT DEFAULT 0",
       "ALTER TABLE comentarios ADD COLUMN fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
     ];
@@ -134,7 +146,6 @@ router.get('/login', (req, res) => {
   res.sendFile(path.resolve('public/login.html'));
 });
 
-// Ruta blindada: Si no hay sesión de administrador activa, redirige al login
 router.get('/admin', (req, res) => {
   if (req.session && req.session.adminAutenticado) {
     return res.sendFile(path.resolve('public/admin.html'));
@@ -163,7 +174,6 @@ router.post('/login', async (req, res) => {
       return res.status(403).json({ mensaje: 'Acceso denegado. No tienes permisos de administrador.' });
     }
 
-    // Registramos la sesión activa en el servidor
     req.session.adminAutenticado = true;
     req.session.cedula = usuario.cedula;
 
@@ -175,7 +185,6 @@ router.post('/login', async (req, res) => {
         rol: usuario.rol
       }
     });
-
   } catch (error) {
     console.error('Error en el proceso de login:', error);
     res.status(500).json({ mensaje: 'Error interno del servidor' });
@@ -202,7 +211,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   const { nombre, sector, presupuesto, estado, avance, porcentaje, fecha_inicio, fecha_fin, latitud, longitud } = req.body;
-  
+
   const valorAvance = avance !== undefined && avance !== '' ? avance : (porcentaje !== undefined && porcentaje !== '' ? porcentaje : 0);
   const fecInicio = fecha_inicio && fecha_inicio !== '' ? fecha_inicio : null;
   const fecFin = fecha_fin && fecha_fin !== '' ? fecha_fin : null;
@@ -260,31 +269,59 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// 4. ENDPOINTS DE COMENTARIOS
+// 4. ENDPOINTS DE COMENTARIOS, RESPUESTAS, REACCIONES Y ELIMINACIÓN PROPIA
 
 router.get('/comentarios', async (req, res) => {
+  const deviceId = String(req.query.deviceId || '').trim();
+
   try {
     const [comentarios] = await pool.query(`
-      SELECT c.*, o.nombre AS obra_nombre 
+      SELECT c.id, c.ciudadano, c.comentario, c.obra_id, c.parent_id, c.reportes, c.fecha,
+             o.nombre AS obra_nombre
       FROM comentarios c
       LEFT JOIN obras o ON c.obra_id = o.id
       ORDER BY c.id DESC
     `);
-    res.json(comentarios);
-  } catch (error1) {
-    try {
-      const [comentariosSimples] = await pool.query('SELECT * FROM comentarios ORDER BY id DESC');
-      res.json(comentariosSimples);
-    } catch (error2) {
-      console.error('Error al obtener comentarios:', error2);
-      res.json([]);
+
+    const [reacciones] = await pool.query(`
+      SELECT comentario_id, emoji, COUNT(*) AS total
+      FROM comentario_reacciones
+      GROUP BY comentario_id, emoji
+    `);
+
+    let misReacciones = {};
+    if (deviceId) {
+      const [mias] = await pool.query(
+        'SELECT comentario_id, emoji FROM comentario_reacciones WHERE device_id = ?',
+        [deviceId]
+      );
+      mias.forEach((r) => {
+        misReacciones[r.comentario_id] = r.emoji;
+      });
     }
+
+    const mapaReacciones = {};
+    reacciones.forEach((r) => {
+      if (!mapaReacciones[r.comentario_id]) mapaReacciones[r.comentario_id] = {};
+      mapaReacciones[r.comentario_id][r.emoji] = Number(r.total || 0);
+    });
+
+    const enriquecidos = comentarios.map((c) => ({
+      ...c,
+      reacciones: mapaReacciones[c.id] || {},
+      mi_reaccion: misReacciones[c.id] || null
+    }));
+
+    res.json(enriquecidos);
+  } catch (error) {
+    console.error('Error al obtener comentarios:', error);
+    res.json([]);
   }
 });
 
 router.post('/comentarios', async (req, res) => {
   try {
-    const { ciudadano, nombre, comentario, texto, obra_id } = req.body;
+    const { ciudadano, nombre, comentario, texto, obra_id, parent_id } = req.body;
     const validacion = validarContenidoComentario(ciudadano || nombre, comentario || texto);
 
     if (!validacion.valido) {
@@ -293,11 +330,12 @@ router.post('/comentarios', async (req, res) => {
 
     const autor = validacion.autor;
     const mensaje = validacion.mensaje;
-    const idObra = obra_id ? obra_id : null;
+    const idObra = obra_id ? Number(obra_id) : null;
+    const idPadre = parent_id && /^\d+$/.test(String(parent_id)) ? Number(parent_id) : null;
+    const deleteToken = crypto.randomBytes(16).toString('hex');
 
-    // Obtener columnas actuales de la tabla para insertar exactamente en las disponibles
     const [columnas] = await pool.query('SHOW COLUMNS FROM comentarios');
-    const nombresColumnas = columnas.map(c => c.Field);
+    const nombresColumnas = columnas.map((c) => c.Field);
 
     const campos = [];
     const valores = [];
@@ -322,13 +360,25 @@ router.post('/comentarios', async (req, res) => {
       campos.push('obra_id');
       valores.push(idObra);
     }
+    if (nombresColumnas.includes('parent_id')) {
+      campos.push('parent_id');
+      valores.push(idPadre);
+    }
+    if (nombresColumnas.includes('delete_token')) {
+      campos.push('delete_token');
+      valores.push(deleteToken);
+    }
 
     const placeholders = campos.map(() => '?').join(', ');
     const sql = `INSERT INTO comentarios (${campos.join(', ')}) VALUES (${placeholders})`;
 
     const [resultado] = await pool.query(sql, valores);
 
-    return res.status(201).json({ mensaje: 'Comentario guardado', id: resultado.insertId });
+    return res.status(201).json({
+      mensaje: 'Comentario guardado',
+      id: resultado.insertId,
+      delete_token: deleteToken
+    });
   } catch (error) {
     console.error('Error real de MySQL al guardar comentario:', error);
     res.status(500).json({
@@ -338,6 +388,47 @@ router.post('/comentarios', async (req, res) => {
   }
 });
 
+// Reaccionar con emoji (alterna o cambia la reacción del dispositivo)
+router.post('/comentarios/:id/reaccionar', async (req, res) => {
+  const { id } = req.params;
+  const { emoji, deviceId } = req.body || {};
+  const emojisPermitidos = ['👍', '❤️', '👏', '😮', '😢'];
+
+  if (!/^\d+$/.test(String(id)) || !emojisPermitidos.includes(emoji) || !deviceId) {
+    return res.status(400).json({ error: 'Reacción no válida.' });
+  }
+
+  try {
+    const [existente] = await pool.query(
+      'SELECT emoji FROM comentario_reacciones WHERE comentario_id = ? AND device_id = ?',
+      [id, String(deviceId)]
+    );
+
+    if (existente.length > 0 && existente[0].emoji === emoji) {
+      await pool.query(
+        'DELETE FROM comentario_reacciones WHERE comentario_id = ? AND device_id = ?',
+        [id, String(deviceId)]
+      );
+    } else if (existente.length > 0) {
+      await pool.query(
+        'UPDATE comentario_reacciones SET emoji = ? WHERE comentario_id = ? AND device_id = ?',
+        [emoji, id, String(deviceId)]
+      );
+    } else {
+      await pool.query(
+        'INSERT INTO comentario_reacciones (comentario_id, device_id, emoji) VALUES (?, ?, ?)',
+        [id, String(deviceId), emoji]
+      );
+    }
+
+    res.json({ mensaje: 'Reacción actualizada' });
+  } catch (error) {
+    console.error('Error al reaccionar:', error);
+    res.status(500).json({ error: 'No se pudo registrar la reacción' });
+  }
+});
+
+// Reportar comentario
 router.post('/comentarios/:id/reportar', async (req, res) => {
   const { id } = req.params;
   if (!/^\d+$/.test(String(id))) {
@@ -360,10 +451,31 @@ router.post('/comentarios/:id/reportar', async (req, res) => {
   }
 });
 
+// Eliminar comentario (autor con delete_token O administrador autenticado)
 router.delete('/comentarios/:id', async (req, res) => {
   const { id } = req.params;
+  const esAdmin = Boolean(req.session && req.session.adminAutenticado);
+  const tokenCliente = String((req.body && req.body.delete_token) || req.headers['x-delete-token'] || '').trim();
+
   try {
+    if (!esAdmin) {
+      if (!tokenCliente) {
+        return res.status(403).json({ error: 'No tienes permiso para eliminar este comentario.' });
+      }
+      const [rows] = await pool.query('SELECT delete_token FROM comentarios WHERE id = ?', [id]);
+      if (rows.length === 0) {
+        return res.status(404).json({ error: 'Comentario no encontrado.' });
+      }
+      if (!rows[0].delete_token || rows[0].delete_token !== tokenCliente) {
+        return res.status(403).json({ error: 'Solo quien publicó este comentario puede eliminarlo.' });
+      }
+    }
+
+    // Borra también sus respuestas hijas y reacciones asociadas
+    await pool.query('DELETE FROM comentario_reacciones WHERE comentario_id = ?', [id]).catch(() => {});
+    await pool.query('DELETE FROM comentarios WHERE parent_id = ?', [id]).catch(() => {});
     const [resultado] = await pool.query('DELETE FROM comentarios WHERE id = ?', [id]);
+
     if (resultado.affectedRows === 0) {
       return res.status(404).json({ mensaje: 'Comentario no encontrado' });
     }

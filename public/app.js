@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     obtenerObrasPublicas();
     inicializarMapa();
     inicializarChatbot();
+    inyectarEstilosComentariosInteractivos();
     cargarComentariosPublicos();
     inicializarFormularioComentarios();
     inicializarMenuMovilYAnimaciones();
@@ -183,7 +184,199 @@ async function cargarMarcadoresEnMapa(map) {
     }
 }
 
-// 3. FILTRO AUTOMÁTICO, REPORTE CIUDADANO Y COMENTARIOS PÚBLICOS
+// 3. BUZÓN CIUDADANO: FILTRO, REACCIONES, RESPUESTAS, ELIMINAR PROPIO Y REPORTES
+
+function inyectarEstilosComentariosInteractivos() {
+    if (document.getElementById('estilos-comentarios-interactivos')) return;
+    const style = document.createElement('style');
+    style.id = 'estilos-comentarios-interactivos';
+    style.textContent = `
+        .comentario-acciones-bar {
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .comentario-acciones-izq,
+        .comentario-acciones-der {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .btn-mini-accion {
+            width: auto !important;
+            padding: 3px 9px !important;
+            font-size: 0.75rem !important;
+            line-height: 1.2 !important;
+            border-radius: 999px !important;
+            background: #f8fafc !important;
+            color: #475569 !important;
+            border: 1px solid #cbd5e1 !important;
+            box-shadow: none !important;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .btn-mini-accion:hover:not(:disabled) {
+            background: #e2e8f0 !important;
+            border-color: #94a3b8 !important;
+        }
+        .btn-mini-accion:disabled {
+            opacity: 0.65;
+            cursor: default;
+        }
+        .btn-mini-eliminar {
+            color: #b91c1c !important;
+            border-color: #fecaca !important;
+            background: #fef2f2 !important;
+        }
+        .btn-mini-eliminar:hover {
+            background: #fee2e2 !important;
+        }
+        .reaccion-wrapper {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .reaccion-picker-popover {
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 0;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 999px;
+            padding: 4px 8px;
+            display: none;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.14);
+            z-index: 30;
+        }
+        .reaccion-picker-popover.abierto {
+            display: inline-flex;
+        }
+        .btn-emoji-opcion {
+            width: auto !important;
+            padding: 3px 6px !important;
+            font-size: 1rem !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 50% !important;
+            cursor: pointer;
+            transition: transform 0.12s ease;
+        }
+        .btn-emoji-opcion:hover {
+            transform: scale(1.25);
+            background: #f1f5f9 !important;
+        }
+        .badge-reaccion-activa {
+            width: auto !important;
+            padding: 2px 7px !important;
+            font-size: 0.74rem !important;
+            border-radius: 999px !important;
+            background: #f1f5f9 !important;
+            color: #334155 !important;
+            border: 1px solid #cbd5e1 !important;
+            box-shadow: none !important;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .badge-reaccion-activa.mia {
+            background: #e0f2fe !important;
+            border-color: #08AFE6 !important;
+            color: #0369a1 !important;
+            font-weight: 600;
+        }
+        .caja-respuesta-inline {
+            margin-top: 8px;
+            padding: 10px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .caja-respuesta-inline input,
+        .caja-respuesta-inline textarea {
+            font-size: 0.85rem !important;
+            padding: 7px 10px !important;
+            border-radius: 8px !important;
+            border: 1px solid #cbd5e1 !important;
+            width: 100%;
+        }
+        .lista-respuestas-hilo {
+            margin-top: 10px;
+            padding-left: 14px;
+            border-left: 2px solid #cbd5e1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .respuesta-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 8px 11px;
+        }
+    `;
+    document.head.appendChild(style);
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.reaccion-wrapper')) {
+            document.querySelectorAll('.reaccion-picker-popover.abierto').forEach((el) => {
+                el.classList.remove('abierto');
+            });
+        }
+    });
+}
+
+function obtenerDeviceId() {
+    try {
+        let id = localStorage.getItem('veeduriaDeviceId');
+        if (!id) {
+            id = 'dev_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+            localStorage.setItem('veeduriaDeviceId', id);
+        }
+        return id;
+    } catch (e) {
+        return 'dev_anon';
+    }
+}
+
+function obtenerTokensPropios() {
+    try {
+        return JSON.parse(localStorage.getItem('veeduriaMisComentariosTokens') || '{}');
+    } catch (e) {
+        return {};
+    }
+}
+
+function guardarTokenPropio(comentarioId, token) {
+    if (!comentarioId || !token) return;
+    try {
+        const tokens = obtenerTokensPropios();
+        tokens[String(comentarioId)] = token;
+        localStorage.setItem('veeduriaMisComentariosTokens', JSON.stringify(tokens));
+    } catch (e) {}
+}
+
+function eliminarTokenPropio(comentarioId) {
+    try {
+        const tokens = obtenerTokensPropios();
+        delete tokens[String(comentarioId)];
+        localStorage.setItem('veeduriaMisComentariosTokens', JSON.stringify(tokens));
+    } catch (e) {}
+}
 
 function validarComentarioAutomatico(nombre, texto) {
     const autorLimpio = (nombre || '').trim();
@@ -192,34 +385,30 @@ function validarComentarioAutomatico(nombre, texto) {
     if (autorLimpio.length < 2) {
         return { valido: false, motivo: 'Escribe tu nombre o "Anónimo" (mínimo 2 caracteres).' };
     }
-    if (limpio.length < 5) {
-        return { valido: false, motivo: 'Tu comentario es muy corto; escribe al menos 5 caracteres.' };
+    if (limpio.length < 3) {
+        return { valido: false, motivo: 'Tu mensaje es muy corto; escribe al menos 3 caracteres.' };
     }
     if (limpio.length > 400) {
         return { valido: false, motivo: 'El comentario no puede superar los 400 caracteres.' };
     }
 
-    // Evita envíos idénticos repetidos en menos de 15 segundos
     const ahora = Date.now();
     if (
         ultimoComentarioEnviado.texto.toLowerCase() === limpio.toLowerCase() &&
         ahora - ultimoComentarioEnviado.timestamp < 15000
     ) {
-        return { valido: false, motivo: 'Ya enviaste ese mismo comentario hace unos segundos.' };
+        return { valido: false, motivo: 'Ya enviaste ese mismo mensaje hace unos segundos.' };
     }
 
-    // Bloquea enlaces y spam comercial
     const tieneEnlace = /(https?:\/\/|www\.|\.(com|co|net|org|io|gg|me|ly)\b)/i.test(limpio);
     if (tieneEnlace) {
         return { valido: false, motivo: 'No se permiten enlaces ni direcciones web en el buzón ciudadano.' };
     }
 
-    // Bloquea repetición exagerada de caracteres (ej. "aaaaaaa" o "!!!!!!")
     if (/(.)\1{6,}/i.test(limpio)) {
         return { valido: false, motivo: 'Evita repetir el mismo carácter muchas veces seguidas.' };
     }
 
-    // Filtro automático de lenguaje ofensivo o inadecuado
     const palabrasBloqueadas = [
         'idiota', 'imbecil', 'imbécil', 'estupido', 'estúpido',
         'basura', 'mierda', 'puta', 'puto', 'malparido', 'gonorrea', 'hp'
@@ -278,6 +467,51 @@ function obtenerIniciales(nombre) {
     return partes[0].substring(0, 2).toUpperCase();
 }
 
+async function reaccionarComentario(comentarioId, emoji) {
+    try {
+        await fetch(`/obras/comentarios/${encodeURIComponent(comentarioId)}/reaccionar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                emoji,
+                deviceId: obtenerDeviceId()
+            })
+        });
+        await cargarComentariosPublicos();
+    } catch (e) {
+        console.error('Error al reaccionar:', e);
+    }
+}
+
+async function eliminarComentarioPropio(comentarioId) {
+    const tokens = obtenerTokensPropios();
+    const token = tokens[String(comentarioId)];
+    if (!token) return;
+
+    if (!confirm('¿Deseas eliminar tu comentario?')) return;
+
+    try {
+        const respuesta = await fetch(`/obras/comentarios/${encodeURIComponent(comentarioId)}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-delete-token': token
+            },
+            body: JSON.stringify({ delete_token: token })
+        });
+
+        if (respuesta.ok) {
+            eliminarTokenPropio(comentarioId);
+            await cargarComentariosPublicos();
+        } else {
+            const err = await respuesta.json().catch(() => ({}));
+            alert(err.error || 'No se pudo eliminar el comentario.');
+        }
+    } catch (e) {
+        console.error('Error al eliminar comentario propio:', e);
+    }
+}
+
 async function reportarComentario(claveComentario, boton) {
     const reportesLocales = obtenerReportesGuardados();
     const marcadoLocal = Number(reportesLocales[claveComentario] || 0) + 1;
@@ -310,14 +544,100 @@ async function reportarComentario(claveComentario, boton) {
     await cargarComentariosPublicos();
 }
 
+function construirBarraAcciones(c, clave, reportesLocales, tokensPropios, permitirResponder = true) {
+    const yaReportado = Number(reportesLocales[clave] || 0) > 0;
+    const esMio = Boolean(c.id && tokensPropios[String(c.id)]);
+    const reaccionesObj = c.reacciones || {};
+    const miReaccion = c.mi_reaccion || null;
+    const emojisDisponibles = ['👍', '❤️', '👏', '😮', '😢'];
+
+    const badgesHTML = Object.entries(reaccionesObj)
+        .filter(([, count]) => Number(count) > 0)
+        .map(([emoji, count]) => `
+            <button type="button" class="badge-reaccion-activa ${miReaccion === emoji ? 'mia' : ''}" data-emoji="${emoji}">
+                <span>${emoji}</span><span>${count}</span>
+            </button>
+        `)
+        .join('');
+
+    const pickerHTML = emojisDisponibles
+        .map((em) => `<button type="button" class="btn-emoji-opcion" data-emoji="${em}">${em}</button>`)
+        .join('');
+
+    const barra = document.createElement('div');
+    barra.className = 'comentario-acciones-bar';
+    barra.innerHTML = `
+        <div class="comentario-acciones-izq">
+            <div class="reaccion-wrapper">
+                <button type="button" class="btn-mini-accion btn-toggle-reacciones" title="Reaccionar">
+                    <span>${miReaccion || '😊'}</span><span>▾</span>
+                </button>
+                <div class="reaccion-picker-popover">${pickerHTML}</div>
+                ${badgesHTML}
+            </div>
+            ${permitirResponder ? `<button type="button" class="btn-mini-accion btn-abrir-respuesta">↳ Responder</button>` : ''}
+        </div>
+        <div class="comentario-acciones-der">
+            ${esMio ? `<button type="button" class="btn-mini-accion btn-mini-eliminar btn-eliminar-propio">Eliminar</button>` : ''}
+            <button type="button" class="btn-mini-accion btn-reportar-comentario" ${yaReportado ? 'disabled' : ''}>
+                ${yaReportado ? 'Reportado' : 'Reportar'}
+            </button>
+        </div>
+    `;
+
+    // Eventos del selector compacto de emojis
+    const btnToggleReac = barra.querySelector('.btn-toggle-reacciones');
+    const popover = barra.querySelector('.reaccion-picker-popover');
+    if (btnToggleReac && popover && c.id) {
+        btnToggleReac.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.reaccion-picker-popover.abierto').forEach((otro) => {
+                if (otro !== popover) otro.classList.remove('abierto');
+            });
+            popover.classList.toggle('abierto');
+        });
+
+        popover.querySelectorAll('.btn-emoji-opcion').forEach((btnEm) => {
+            btnEm.addEventListener('click', (e) => {
+                e.stopPropagation();
+                popover.classList.remove('abierto');
+                reaccionarComentario(c.id, btnEm.dataset.emoji);
+            });
+        });
+
+        barra.querySelectorAll('.badge-reaccion-activa').forEach((badge) => {
+            badge.addEventListener('click', (e) => {
+                e.stopPropagation();
+                reaccionarComentario(c.id, badge.dataset.emoji);
+            });
+        });
+    }
+
+    // Evento de eliminar comentario propio
+    const btnEliminar = barra.querySelector('.btn-eliminar-propio');
+    if (btnEliminar && c.id) {
+        btnEliminar.addEventListener('click', () => eliminarComentarioPropio(c.id));
+    }
+
+    // Evento de reportar
+    const btnReportar = barra.querySelector('.btn-reportar-comentario');
+    if (btnReportar && !yaReportado) {
+        btnReportar.addEventListener('click', () => reportarComentario(clave, btnReportar));
+    }
+
+    return barra;
+}
+
 async function cargarComentariosPublicos() {
     const contenedorComentarios = document.getElementById('contenedorComentarios') || document.getElementById('listaComentarios');
     if (!contenedorComentarios) return;
 
     try {
-        const respuesta = await fetch('/obras/comentarios');
+        const deviceId = encodeURIComponent(obtenerDeviceId());
+        const respuesta = await fetch(`/obras/comentarios?deviceId=${deviceId}`);
         const comentarios = await respuesta.json();
         const reportesLocales = obtenerReportesGuardados();
+        const tokensPropios = obtenerTokensPropios();
 
         contenedorComentarios.innerHTML = '';
 
@@ -326,28 +646,38 @@ async function cargarComentariosPublicos() {
             return;
         }
 
-        // Lee el total de reportes desde MySQL (c.reportes) para ocultar a partir de 3 reportes en todos los dispositivos
-        const comentariosVisibles = comentarios.filter((c, idx) => {
+        // Filtra ocultos por 3 o más reportes en MySQL
+        const visibles = comentarios.filter((c, idx) => {
             const clave = String(c.id ?? `${c.ciudadano || c.nombre || 'anon'}-${c.fecha || idx}`);
             const reportesBD = Number(c.reportes ?? c.total_reportes ?? 0);
             const reportesDispositivo = Number(reportesLocales[clave] || 0);
-            const totalReportes = Math.max(reportesBD, reportesDispositivo);
-            return totalReportes < 3;
+            return Math.max(reportesBD, reportesDispositivo) < 3;
         });
 
-        if (comentariosVisibles.length === 0) {
+        const principales = visibles.filter((c) => !c.parent_id);
+        const respuestasPorPadre = {};
+
+        visibles
+            .filter((c) => c.parent_id)
+            .reverse() // Muestra las respuestas en orden cronológico dentro del hilo
+            .forEach((resp) => {
+                const pid = String(resp.parent_id);
+                if (!respuestasPorPadre[pid]) respuestasPorPadre[pid] = [];
+                respuestasPorPadre[pid].push(resp);
+            });
+
+        if (principales.length === 0) {
             contenedorComentarios.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">No hay comentarios visibles en este momento.</p>';
             return;
         }
 
-        comentariosVisibles.forEach((c, idx) => {
+        principales.forEach((c, idx) => {
             const autor = c.ciudadano || c.nombre || 'Anónimo';
             const iniciales = obtenerIniciales(autor);
             const textoComentario = c.comentario || c.texto || '';
             const fechaFormateada = c.fecha ? new Date(c.fecha).toLocaleDateString() : 'Reciente';
             const obraInfo = c.obra_nombre ? `<div style="font-size: 12px; color: #0284c7; margin-top: 2px;">Obra: ${escaparHTML(c.obra_nombre)}</div>` : '';
             const clave = String(c.id ?? `${autor}-${c.fecha || idx}`);
-            const yaReportadoEnDispositivo = Number(reportesLocales[clave] || 0) > 0;
 
             const divComentario = document.createElement('div');
             divComentario.className = 'comentario-item';
@@ -360,20 +690,104 @@ async function cargarComentariosPublicos() {
                     </div>
                     ${obraInfo}
                     <p class="comentario-texto">${escaparHTML(textoComentario)}</p>
-                    <div style="margin-top: 8px; display: flex; justify-content: flex-end;">
-                        <button
-                            type="button"
-                            class="btn-reportar-comentario"
-                            ${yaReportadoEnDispositivo ? 'disabled' : ''}
-                            style="width: auto; padding: 4px 10px; font-size: 0.76rem; border-radius: 999px; background: ${yaReportadoEnDispositivo ? '#e2e8f0' : 'transparent'}; color: #64748b; border: 1px solid #cbd5e1; box-shadow: none;"
-                        >${yaReportadoEnDispositivo ? 'Reportado' : 'Reportar'}</button>
-                    </div>
                 </div>
             `;
 
-            const btnReportar = divComentario.querySelector('.btn-reportar-comentario');
-            if (btnReportar && !yaReportadoEnDispositivo) {
-                btnReportar.addEventListener('click', () => reportarComentario(clave, btnReportar));
+            const contenidoEl = divComentario.querySelector('.comentario-contenido');
+            const barraAcciones = construirBarraAcciones(c, clave, reportesLocales, tokensPropios, true);
+            contenidoEl.appendChild(barraAcciones);
+
+            // Caja inline para responder al comentario
+            const btnResponder = barraAcciones.querySelector('.btn-abrir-respuesta');
+            if (btnResponder && c.id) {
+                btnResponder.addEventListener('click', () => {
+                    let caja = contenidoEl.querySelector('.caja-respuesta-inline');
+                    if (caja) {
+                        caja.remove();
+                        return;
+                    }
+
+                    caja = document.createElement('div');
+                    caja.className = 'caja-respuesta-inline';
+                    caja.innerHTML = `
+                        <input type="text" class="input-resp-nombre" placeholder="Tu nombre o Anónimo" maxlength="60">
+                        <textarea class="input-resp-texto" rows="2" placeholder="Escribe una respuesta para ${escaparHTML(autor)}..." maxlength="400"></textarea>
+                        <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                            <button type="button" class="btn-mini-accion btn-cancelar-resp">Cancelar</button>
+                            <button type="button" class="btn-mini-accion btn-enviar-resp" style="background: #508C46 !important; color: #fff !important; border-color: #508C46 !important;">Responder</button>
+                        </div>
+                    `;
+
+                    caja.querySelector('.btn-cancelar-resp').addEventListener('click', () => caja.remove());
+                    caja.querySelector('.btn-enviar-resp').addEventListener('click', async () => {
+                        const nombreVal = caja.querySelector('.input-resp-nombre').value;
+                        const textoVal = caja.querySelector('.input-resp-texto').value;
+                        const validacion = validarComentarioAutomatico(nombreVal, textoVal);
+
+                        if (!validacion.valido) {
+                            alert(validacion.motivo);
+                            return;
+                        }
+
+                        try {
+                            const resp = await fetch('/obras/comentarios', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    ciudadano: validacion.autor,
+                                    comentario: validacion.texto,
+                                    parent_id: c.id
+                                })
+                            });
+
+                            if (resp.ok) {
+                                const data = await resp.json().catch(() => ({}));
+                                if (data.id && data.delete_token) {
+                                    guardarTokenPropio(data.id, data.delete_token);
+                                }
+                                ultimoComentarioEnviado = { texto: validacion.texto, timestamp: Date.now() };
+                                await cargarComentariosPublicos();
+                            } else {
+                                const err = await resp.json().catch(() => ({}));
+                                alert(err.error || 'No se pudo publicar la respuesta.');
+                            }
+                        } catch (e) {
+                            alert('No se pudo conectar con el servidor.');
+                        }
+                    });
+
+                    contenidoEl.appendChild(caja);
+                });
+            }
+
+            // Renderizar respuestas hijas si existen
+            const hijos = c.id ? (respuestasPorPadre[String(c.id)] || []) : [];
+            if (hijos.length > 0) {
+                const contenedorHijos = document.createElement('div');
+                contenedorHijos.className = 'lista-respuestas-hilo';
+
+                hijos.forEach((h, hIdx) => {
+                    const hAutor = h.ciudadano || h.nombre || 'Anónimo';
+                    const hTexto = h.comentario || h.texto || '';
+                    const hFecha = h.fecha ? new Date(h.fecha).toLocaleDateString() : 'Reciente';
+                    const hClave = String(h.id ?? `${hAutor}-${h.fecha || hIdx}`);
+
+                    const divHijo = document.createElement('div');
+                    divHijo.className = 'respuesta-item';
+                    divHijo.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 3px;">
+                            <span style="font-weight: 600; font-size: 0.85rem; color: #1e293b;">↳ ${escaparHTML(hAutor)}</span>
+                            <span style="font-size: 0.75rem; color: #64748b;">${hFecha}</span>
+                        </div>
+                        <p style="margin: 0; font-size: 0.88rem; color: #334155;">${escaparHTML(hTexto)}</p>
+                    `;
+
+                    const barraHijo = construirBarraAcciones(h, hClave, reportesLocales, tokensPropios, false);
+                    divHijo.appendChild(barraHijo);
+                    contenedorHijos.appendChild(divHijo);
+                });
+
+                contenidoEl.appendChild(contenedorHijos);
             }
 
             contenedorComentarios.appendChild(divComentario);
@@ -419,6 +833,10 @@ function inicializarFormularioComentarios() {
             });
 
             if (respuesta.ok) {
+                const data = await respuesta.json().catch(() => ({}));
+                if (data.id && data.delete_token) {
+                    guardarTokenPropio(data.id, data.delete_token);
+                }
                 ultimoComentarioEnviado = {
                     texto: validacion.texto,
                     timestamp: Date.now()
