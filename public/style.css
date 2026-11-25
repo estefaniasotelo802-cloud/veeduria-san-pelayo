@@ -2045,3 +2045,11 @@ html.acc-contraste { filter: contrast(1.35) saturate(1.1); }
   padding: 14px;
   color: #334155;
 }
+
+footer {
+  background-color: #e0f2fe;
+  color: #0f172a;
+  padding: 18px 20px;
+  text-align: center;
+  border-top: 1px solid #bae6fd;
+}
