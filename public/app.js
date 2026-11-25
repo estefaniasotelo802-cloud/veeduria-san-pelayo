@@ -53,6 +53,23 @@ function obtenerAvanceObra(obra) {
     return val === '' ? 0 : val;
 }
 
+function obtenerDescripcionObra(obra) {
+    return String(
+        obra.justificacion ||
+        obra.razon ||
+        obra.ejecucion ||
+        obra.descripcion ||
+        obra.resumen ||
+        ''
+    ).trim();
+}
+
+function resumirTextoObraPublica(texto, limite = 95) {
+    const limpio = String(texto || '').trim();
+    if (!limpio) return '';
+    return limpio.length > limite ? `${limpio.slice(0, limite).trim()}...` : limpio;
+}
+
 function resolverCoordenadasObra(obra) {
     const latNum = parseFloat(obra.latitud);
     const lngNum = parseFloat(obra.longitud);
@@ -106,9 +123,16 @@ function renderizarTablaObras(obras) {
         const porcentajeNum = Math.max(0, Math.min(100, Number(obtenerAvanceObra(obra)) || 0));
         const fechaInicio = obra.fecha_inicio ? new Date(obra.fecha_inicio).toLocaleDateString() : 'N/D';
         const fechaFin = obra.fecha_fin ? new Date(obra.fecha_fin).toLocaleDateString() : 'N/D';
+        const resumenObra = resumirTextoObraPublica(obtenerDescripcionObra(obra));
 
         fila.innerHTML = `
-            <td>${escaparHTML(obra.nombre)}</td>
+            <td>
+                <div style="font-weight: 700; color: #0f172a;">${escaparHTML(obra.nombre)}</div>
+                ${resumenObra
+                    ? `<div style="font-size: 0.82rem; color: #475569; margin-top: 4px; line-height: 1.35;">${escaparHTML(resumenObra)}</div>`
+                    : ''
+                }
+            </td>
             <td>${escaparHTML(obra.sector)}</td>
             <td>$${Number(obra.presupuesto).toLocaleString()}</td>
             <td><span class="badge ${obtenerClaseEstado(obra.estado)}">${escaparHTML(obra.estado)}</span></td>
@@ -210,7 +234,8 @@ async function cargarMarcadoresEnMapa(map) {
             const { lat, lng } = resolverCoordenadasObra(obra);
             const porcentajeVal = obtenerAvanceObra(obra);
             const colorPin = obtenerColorPorEstado(obra.estado, porcentajeVal);
-            const razonObra = obra.razon || obra.justificacion || '';
+            const razonObra = String(obra.justificacion || obra.razon || '').trim();
+            const ejecucionObra = String(obra.ejecucion || '').trim();
 
             const iconoPinSvg = L.divIcon({
                 className: 'custom-pin',
@@ -234,6 +259,7 @@ async function cargarMarcadoresEnMapa(map) {
                     <p style="margin: 3px 0;"><strong>Estado:</strong> ${escaparHTML(obra.estado)}</p>
                     <p style="margin: 3px 0;"><strong>Avance:</strong> ${porcentajeVal}%</p>
                     ${razonObra ? `<p style="margin: 6px 0 0 0; padding-top: 5px; border-top: 1px solid #e2e8f0; font-size: 0.85rem; color: #334155;"><strong>Razón / Justificación:</strong> ${escaparHTML(razonObra)}</p>` : ''}
+                    ${ejecucionObra ? `<p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #334155;"><strong>Ejecución:</strong> ${escaparHTML(ejecucionObra)}</p>` : ''}
                 </div>
             `);
             marcadoresObras[obra.id] = marker;
@@ -805,15 +831,22 @@ function formatearFichaObraChatbot(obra) {
     const presupuesto = Number(obra.presupuesto || 0).toLocaleString();
     const fechaInicio = obra.fecha_inicio ? new Date(obra.fecha_inicio).toLocaleDateString() : 'N/D';
     const fechaFin = obra.fecha_fin ? new Date(obra.fecha_fin).toLocaleDateString() : 'N/D';
+    const justificacion = String(obra.justificacion || obra.razon || obra.descripcion || '').trim();
+    const ejecucion = String(obra.ejecucion || '').trim();
 
-    return [
+    const lineas = [
         `Información de "${obra.nombre || 'Obra sin nombre'}":`,
         `• Sector: ${obra.sector || 'No especificado'}`,
         `• Presupuesto: $${presupuesto}`,
         `• Estado: ${obra.estado || 'Pendiente'}`,
         `• Avance: ${avance}%`,
         `• Fechas: ${fechaInicio} al ${fechaFin}`
-    ].join('\n');
+    ];
+
+    if (justificacion) lineas.push(`• En qué consiste / Razón: ${justificacion}`);
+    if (ejecucion) lineas.push(`• Cómo se ejecuta: ${ejecucion}`);
+
+    return lineas.join('\n');
 }
 
 function construirMensajeListadoObras(obras, agregarMensajeFn) {
