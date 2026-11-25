@@ -202,7 +202,7 @@ window.prepararEdicion = function(obra) {
     document.getElementById('sector').value = obra.sector || '';
     document.getElementById('presupuesto').value = obra.presupuesto || '';
     document.getElementById('estado').value = obra.estado || 'En ejecución';
-    document.getElementById('avance_porcentaje').value = obra.porcentaje || obra.avance_porcentaje || 0;
+    document.getElementById('avance_porcentaje').value = obra.porcentaje ?? obra.avance_porcentaje ?? 0;
     document.getElementById('fecha_inicio').value = obra.fecha_inicio ? obra.fecha_inicio.split('T')[0] : '';
     document.getElementById('fecha_fin').value = obra.fecha_fin ? obra.fecha_fin.split('T')[0] : '';
 
@@ -258,37 +258,36 @@ document.addEventListener('DOMContentLoaded', () => {
         formObra.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const id = obraIdInput ? obraIdInput.value : '';
-            const sectorValor = document.getElementById('sector').value;
+            const id = obraIdInput ? obraIdInput.value.trim() : '';
+            const sectorValor = document.getElementById('sector').value.trim();
+            const presupuestoLimpio = document.getElementById('presupuesto').value.replace(/[^\d.-]/g, '').trim();
+            const avanceNum = Number(document.getElementById('avance_porcentaje').value) || 0;
             const coords = await obtenerCoordenadasPorSector(sectorValor);
 
             const datosObra = {
-                nombre: document.getElementById('nombre').value,
+                nombre: document.getElementById('nombre').value.trim(),
                 sector: sectorValor,
-                presupuesto: document.getElementById('presupuesto').value,
+                presupuesto: presupuestoLimpio,
                 estado: document.getElementById('estado').value,
-                porcentaje: document.getElementById('avance_porcentaje').value,
-                fecha_inicio: document.getElementById('fecha_inicio').value,
-                fecha_fin: document.getElementById('fecha_fin').value,
+                porcentaje: avanceNum,
+                avance_porcentaje: avanceNum,
+                fecha_inicio: document.getElementById('fecha_inicio').value || null,
+                fecha_fin: document.getElementById('fecha_fin').value || null,
                 latitud: coords.latitud,
                 longitud: coords.longitud
             };
 
             try {
-                let respuesta;
-                if (id) {
-                    respuesta = await fetch(`/obras/${id}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(datosObra)
-                    });
-                } else {
-                    respuesta = await fetch('/obras', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(datosObra)
-                    });
-                }
+                const url = id ? `/obras/${id}` : '/obras';
+                const metodo = id ? 'PUT' : 'POST';
+
+                const respuesta = await fetch(url, {
+                    method: metodo,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datosObra)
+                });
+
+                const resultado = await respuesta.json().catch(() => ({}));
 
                 if (respuesta.ok) {
                     alert(id ? '¡Obra actualizada exitosamente!' : '¡Obra registrada exitosamente!');
@@ -297,11 +296,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (formTitle) formTitle.innerText = 'Registrar Nueva Obra';
                     if (btnSubmitForm) {
                         btnSubmitForm.innerText = 'Guardar Nueva Obra';
-                        btnSubmitForm.style.backgroundColor = '#10b981';
+                        btnSubmitForm.style.backgroundColor = '';
                     }
                     cargarObrasAdmin();
                 } else {
-                    alert('Hubo un error al procesar la solicitud.');
+                    alert(resultado.mensaje || 'Hubo un error al procesar la solicitud.');
                 }
             } catch (error) {
                 console.error('Error de red:', error);
