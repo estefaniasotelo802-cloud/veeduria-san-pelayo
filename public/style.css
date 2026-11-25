@@ -353,6 +353,29 @@ body {
   margin-bottom: 25px;
 }
 
+/* Evita que el buzón crezca infinito y sature la página */
+#contenedorComentarios,
+#listaComentarios {
+  max-height: 520px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
+  margin-top: 18px;
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 transparent;
+}
+
+#contenedorComentarios::-webkit-scrollbar,
+#listaComentarios::-webkit-scrollbar {
+  width: 6px;
+}
+
+#contenedorComentarios::-webkit-scrollbar-thumb,
+#listaComentarios::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 999px;
+}
+
 #formComentario input,
 #formComentario textarea {
   padding: 14px 18px;
@@ -419,6 +442,7 @@ body {
 
 .comentario-contenido {
   flex-grow: 1;
+  min-width: 0;
 }
 
 .comentario-header {
@@ -444,6 +468,7 @@ body {
   font-size: 0.95rem;
   line-height: 1.4;
   margin: 0;
+  word-break: break-word;
 }
 
 .comentario-acciones-bar {
@@ -1630,7 +1655,7 @@ html.acc-contraste { filter: contrast(1.35) saturate(1.1); }
   height: 360px;
   width: 100%;
   overflow-x: auto;
-  padding-bottom: 6px;
+  padding: 6px 0 8px;
 }
 
 .galeria-card {
@@ -1746,6 +1771,7 @@ html.acc-contraste { filter: contrast(1.35) saturate(1.1); }
     flex-direction: column;
     height: auto;
     overflow-x: visible;
+    padding: 0;
   }
 
   .galeria-card {

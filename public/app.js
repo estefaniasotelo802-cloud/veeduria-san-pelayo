@@ -15,6 +15,7 @@ let mapaGlobal = null;
 const marcadoresObras = {};
 let zoomTextoActual = 100;
 let accTamanoPx = 16;
+let limiteComentariosVisibles = 5;
 let ultimoComentarioEnviado = { texto: '', timestamp: 0 };
 
 function escaparHTML(texto) {
@@ -540,7 +541,9 @@ async function cargarComentariosPublicos() {
             return;
         }
 
-        principales.forEach((c, idx) => {
+        const comentariosAMostrar = principales.slice(0, limiteComentariosVisibles);
+
+        comentariosAMostrar.forEach((c, idx) => {
             const autor = c.ciudadano || c.nombre || 'Anónimo';
             const fechaFormateada = c.fecha ? new Date(c.fecha).toLocaleDateString() : 'Reciente';
             const obraInfo = c.obra_nombre ? `<div style="font-size: 12px; color: #0284c7; margin-top: 2px;">Obra: ${escaparHTML(c.obra_nombre)}</div>` : '';
@@ -632,6 +635,20 @@ async function cargarComentariosPublicos() {
 
             contenedorComentarios.appendChild(divComentario);
         });
+
+        if (principales.length > limiteComentariosVisibles) {
+            const restantes = principales.length - limiteComentariosVisibles;
+            const btnVerMas = document.createElement('button');
+            btnVerMas.type = 'button';
+            btnVerMas.className = 'btn-texto-limpio';
+            btnVerMas.style.cssText = 'display: block; margin: 12px auto 4px; color: #1b5e20 !important; font-weight: 600 !important;';
+            btnVerMas.textContent = `Ver más comentarios (${restantes} más)`;
+            btnVerMas.addEventListener('click', () => {
+                limiteComentariosVisibles += 5;
+                cargarComentariosPublicos();
+            });
+            contenedorComentarios.appendChild(btnVerMas);
+        }
     } catch (error) {
         console.error('Error al cargar comentarios públicos:', error);
     }
