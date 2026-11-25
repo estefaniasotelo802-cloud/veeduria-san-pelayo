@@ -73,7 +73,9 @@ function validarContenidoComentario(autor, mensaje) {
         fecha_inicio DATE DEFAULT NULL,
         fecha_fin DATE DEFAULT NULL,
         latitud DECIMAL(10,8) DEFAULT 8.96500000,
-        longitud DECIMAL(11,8) DEFAULT -75.84500000
+        longitud DECIMAL(11,8) DEFAULT -75.84500000,
+        justificacion TEXT DEFAULT NULL,
+        ejecucion TEXT DEFAULT NULL
       )
     `);
 
@@ -101,6 +103,8 @@ function validarContenidoComentario(autor, mensaje) {
     `);
 
     const columnasFaltantes = [
+      "ALTER TABLE obras ADD COLUMN justificacion TEXT DEFAULT NULL",
+      "ALTER TABLE obras ADD COLUMN ejecucion TEXT DEFAULT NULL",
       "ALTER TABLE comentarios ADD COLUMN ciudadano VARCHAR(255) DEFAULT 'Anónimo'",
       "ALTER TABLE comentarios ADD COLUMN comentario TEXT",
       "ALTER TABLE comentarios ADD COLUMN obra_id INT DEFAULT NULL",
@@ -210,18 +214,33 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { nombre, sector, presupuesto, estado, avance, porcentaje, fecha_inicio, fecha_fin, latitud, longitud } = req.body;
+  const {
+    nombre,
+    sector,
+    presupuesto,
+    estado,
+    avance,
+    porcentaje,
+    fecha_inicio,
+    fecha_fin,
+    latitud,
+    longitud,
+    justificacion,
+    ejecucion
+  } = req.body;
 
   const valorAvance = avance !== undefined && avance !== '' ? avance : (porcentaje !== undefined && porcentaje !== '' ? porcentaje : 0);
   const fecInicio = fecha_inicio && fecha_inicio !== '' ? fecha_inicio : null;
   const fecFin = fecha_fin && fecha_fin !== '' ? fecha_fin : null;
   const lat = latitud ? parseFloat(latitud) : 8.96500000;
   const lng = longitud ? parseFloat(longitud) : -75.84500000;
+  const justTexto = justificacion && String(justificacion).trim() !== '' ? String(justificacion).trim() : null;
+  const ejecTexto = ejecucion && String(ejecucion).trim() !== '' ? String(ejecucion).trim() : null;
 
   try {
     const [resultado] = await pool.query(
-      'INSERT INTO obras (nombre, sector, presupuesto, estado, avance_porcentaje, fecha_inicio, fecha_fin, latitud, longitud) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [nombre, sector, presupuesto, estado, valorAvance, fecInicio, fecFin, lat, lng]
+      'INSERT INTO obras (nombre, sector, presupuesto, estado, avance_porcentaje, fecha_inicio, fecha_fin, latitud, longitud, justificacion, ejecucion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [nombre, sector, presupuesto, estado, valorAvance, fecInicio, fecFin, lat, lng, justTexto, ejecTexto]
     );
     res.status(201).json({ mensaje: 'Obra registrada con éxito', id: resultado.insertId });
   } catch (error) {
@@ -232,16 +251,65 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { nombre, sector, presupuesto, estado, avance, porcentaje, fecha_inicio, fecha_fin } = req.body;
+  const {
+    nombre,
+    sector,
+    presupuesto,
+    estado,
+    avance,
+    porcentaje,
+    fecha_inicio,
+    fecha_fin,
+    latitud,
+    longitud,
+    justificacion,
+    ejecucion
+  } = req.body;
 
   const valorAvance = avance !== undefined && avance !== '' ? avance : (porcentaje !== undefined && porcentaje !== '' ? porcentaje : 0);
   const fecInicio = fecha_inicio && fecha_inicio !== '' ? fecha_inicio : null;
   const fecFin = fecha_fin && fecha_fin !== '' ? fecha_fin : null;
+  const justTexto = justificacion && String(justificacion).trim() !== '' ? String(justificacion).trim() : null;
+  const ejecTexto = ejecucion && String(ejecucion).trim() !== '' ? String(ejecucion).trim() : null;
 
   try {
+    const camposUpdate = [
+      'nombre = ?',
+      'sector = ?',
+      'presupuesto = ?',
+      'estado = ?',
+      'avance_porcentaje = ?',
+      'fecha_inicio = ?',
+      'fecha_fin = ?',
+      'justificacion = ?',
+      'ejecucion = ?'
+    ];
+    const valoresUpdate = [
+      nombre,
+      sector,
+      presupuesto,
+      estado,
+      valorAvance,
+      fecInicio,
+      fecFin,
+      justTexto,
+      ejecTexto
+    ];
+
+    if (latitud !== undefined && latitud !== null && !Number.isNaN(parseFloat(latitud))) {
+      camposUpdate.push('latitud = ?');
+      valoresUpdate.push(parseFloat(latitud));
+    }
+    if (longitud !== undefined && longitud !== null && !Number.isNaN(parseFloat(longitud))) {
+      camposUpdate.push('longitud = ?');
+      valoresUpdate.push(parseFloat(longitud));
+    }
+
+    valoresUpdate.push(id);
+
     const [resultado] = await pool.query(
-      'UPDATE obras SET nombre = ?, sector = ?, presupuesto = ?, estado = ?, avance_porcentaje = ?, fecha_inicio = ?, fecha_fin = ? WHERE id = ?',
-      [nombre, sector, presupuesto, estado, valorAvance, fecInicio, fecFin, id]
+      `UPDATE obras SET ${camposUpdate.join(', ')} WHERE id = ?`,
+      valoresUpdate
     );
 
     if (resultado.affectedRows === 0) {
