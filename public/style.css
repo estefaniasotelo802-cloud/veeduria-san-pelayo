@@ -1242,6 +1242,33 @@ body.admin-body {
   color: #475569;
 }
 
+.admin-table td button,
+.admin-table .btn-editar {
+  background: linear-gradient(135deg, #1b5e20, #2e7d32) !important;
+  background-color: #1b5e20 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-table td button:last-child,
+.admin-table .btn-eliminar,
+.admin-table .btn-delete {
+  background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+  background-color: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+.admin-table td button:last-child:hover,
+.admin-table .btn-eliminar:hover,
+.admin-table .btn-delete:hover {
+  background: linear-gradient(135deg, #b91c1c, #991b1b) !important;
+  background-color: #b91c1c !important;
+}
+
 /* ==========================================
 9. MEDIA QUERIES RESPONSIVE
    ========================================== */
