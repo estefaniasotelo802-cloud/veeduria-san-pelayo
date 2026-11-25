@@ -235,7 +235,7 @@ function validarComentarioAutomatico(nombre, texto) {
     const limpio = (texto || '').trim();
 
     if (autorLimpio.length < 2) {
-        return { valido: false, motivo: 'Escribe tu nombre o "Anónimo" (mínimo 2 caracteres).' };
+        return { valido: false, motivo: 'Escribe tu nombre (mínimo 2 caracteres).' };
     }
     if (limpio.length < 3) {
         return { valido: false, motivo: 'Tu mensaje es muy corto; escribe al menos 3 caracteres.' };
@@ -296,7 +296,7 @@ const obtenerReportesGuardados = () => leerJSONLocal('veeduriaReportesComentario
 const guardarReportes = (reportes) => guardarJSONLocal('veeduriaReportesComentarios', reportes);
 
 function obtenerIniciales(nombre) {
-    if (!nombre || nombre.toLowerCase() === 'anónimo') return '👤';
+    if (!nombre) return '👤';
     const partes = nombre.trim().split(/\s+/);
     return partes.length >= 2
         ? (partes[0][0] + partes[1][0]).toUpperCase()
@@ -572,7 +572,7 @@ async function cargarComentariosPublicos() {
                     const caja = document.createElement('div');
                     caja.className = 'caja-respuesta-inline';
                     caja.innerHTML = `
-                        <input type="text" class="input-resp-nombre" placeholder="Tu nombre o Anónimo" maxlength="60">
+                        <input type="text" class="input-resp-nombre" placeholder="Tu nombre" maxlength="60">
                         <textarea class="input-resp-texto" rows="2" placeholder="Escribe una respuesta para ${escaparHTML(autor)}..." maxlength="400"></textarea>
                         <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 2px;">
                             <button type="button" class="btn-texto-limpio btn-cancelar-resp">Cancelar</button>
@@ -1108,7 +1108,7 @@ async function iniciarRotacionHero(intervaloMs = 7000) {
     };
 
     aplicarFondo(listaHero[indice]);
-    
+
     if (listaHero.length > 1) {
         setInterval(() => {
             indice = (indice + 1) % listaHero.length;

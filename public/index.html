@@ -141,7 +141,7 @@
       
       <!-- Formulario -->
       <form id="formComentario" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-        <input type="text" id="nombreUsuario" placeholder="Tu nombre o anónimo" maxlength="60" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+        <input type="text" id="nombreUsuario" name="ciudadano" placeholder="Tu nombre" maxlength="60" required>
         <textarea id="textoComentario" placeholder="Escribe tu comentario o veeduría aquí (máx. 400 caracteres)..." rows="3" maxlength="400" required style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;"></textarea>
         <button type="submit" style="padding: 12px; background: linear-gradient(135deg, #1b5e20, #2e7d32); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Publicar Comentario</button>
         <p id="mensajeComentario" style="display: none; margin: 4px 0 0; font-size: 0.9rem; font-weight: 600; text-align: left;"></p>
