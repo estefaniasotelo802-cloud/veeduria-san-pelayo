@@ -192,70 +192,69 @@ function inyectarEstilosComentariosInteractivos() {
     style.id = 'estilos-comentarios-interactivos';
     style.textContent = `
         .comentario-acciones-bar {
-            margin-top: 8px;
+            margin-top: 6px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 8px;
+            gap: 10px;
+            font-size: 0.78rem;
+            color: #64748b;
         }
         .comentario-acciones-izq,
         .comentario-acciones-der {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 10px;
             flex-wrap: wrap;
         }
-        .btn-mini-accion {
+        .btn-texto-limpio {
             width: auto !important;
-            padding: 3px 9px !important;
-            font-size: 0.75rem !important;
-            line-height: 1.2 !important;
-            border-radius: 999px !important;
-            background: #f8fafc !important;
-            color: #475569 !important;
-            border: 1px solid #cbd5e1 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            font-size: 0.78rem !important;
+            font-weight: 500 !important;
+            background: transparent !important;
+            color: #64748b !important;
+            border: none !important;
             box-shadow: none !important;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            transition: background 0.15s ease, border-color 0.15s ease;
+            gap: 3px;
         }
-        .btn-mini-accion:hover:not(:disabled) {
-            background: #e2e8f0 !important;
-            border-color: #94a3b8 !important;
+        .btn-texto-limpio:hover:not(:disabled) {
+            color: #0f172a !important;
+            text-decoration: underline;
         }
-        .btn-mini-accion:disabled {
-            opacity: 0.65;
+        .btn-texto-limpio:disabled {
+            opacity: 0.55;
             cursor: default;
+            text-decoration: none;
         }
-        .btn-mini-eliminar {
-            color: #b91c1c !important;
-            border-color: #fecaca !important;
-            background: #fef2f2 !important;
+        .btn-texto-eliminar {
+            color: #dc2626 !important;
         }
-        .btn-mini-eliminar:hover {
-            background: #fee2e2 !important;
+        .btn-texto-eliminar:hover {
+            color: #991b1b !important;
         }
         .reaccion-wrapper {
             position: relative;
             display: inline-flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
         }
         .reaccion-picker-popover {
             position: absolute;
             bottom: calc(100% + 6px);
             left: 0;
             background: #ffffff;
-            border: 1px solid #cbd5e1;
+            border: 1px solid #e2e8f0;
             border-radius: 999px;
-            padding: 4px 8px;
+            padding: 3px 7px;
             display: none;
             align-items: center;
-            gap: 4px;
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.14);
+            gap: 2px;
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
             z-index: 30;
         }
         .reaccion-picker-popover.abierto {
@@ -263,8 +262,8 @@ function inyectarEstilosComentariosInteractivos() {
         }
         .btn-emoji-opcion {
             width: auto !important;
-            padding: 3px 6px !important;
-            font-size: 1rem !important;
+            padding: 2px 5px !important;
+            font-size: 0.95rem !important;
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
@@ -273,17 +272,17 @@ function inyectarEstilosComentariosInteractivos() {
             transition: transform 0.12s ease;
         }
         .btn-emoji-opcion:hover {
-            transform: scale(1.25);
+            transform: scale(1.2);
             background: #f1f5f9 !important;
         }
         .badge-reaccion-activa {
             width: auto !important;
-            padding: 2px 7px !important;
-            font-size: 0.74rem !important;
+            padding: 1px 6px !important;
+            font-size: 0.72rem !important;
             border-radius: 999px !important;
             background: #f1f5f9 !important;
             color: #334155 !important;
-            border: 1px solid #cbd5e1 !important;
+            border: 1px solid #e2e8f0 !important;
             box-shadow: none !important;
             cursor: pointer;
             display: inline-flex;
@@ -292,41 +291,41 @@ function inyectarEstilosComentariosInteractivos() {
         }
         .badge-reaccion-activa.mia {
             background: #e0f2fe !important;
-            border-color: #08AFE6 !important;
+            border-color: #7dd3fc !important;
             color: #0369a1 !important;
             font-weight: 600;
         }
         .caja-respuesta-inline {
             margin-top: 8px;
-            padding: 10px;
+            padding: 8px 10px;
             background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
+            border-left: 3px solid #08AFE6;
+            border-radius: 6px;
             display: flex;
             flex-direction: column;
             gap: 6px;
         }
         .caja-respuesta-inline input,
         .caja-respuesta-inline textarea {
-            font-size: 0.85rem !important;
-            padding: 7px 10px !important;
-            border-radius: 8px !important;
+            font-size: 0.84rem !important;
+            padding: 6px 9px !important;
+            border-radius: 6px !important;
             border: 1px solid #cbd5e1 !important;
             width: 100%;
+            background: #ffffff;
         }
         .lista-respuestas-hilo {
-            margin-top: 10px;
-            padding-left: 14px;
-            border-left: 2px solid #cbd5e1;
+            margin-top: 8px;
+            padding-left: 12px;
+            border-left: 2px solid #e2e8f0;
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
         .respuesta-item {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 8px 11px;
+            padding: 2px 0;
+            background: transparent;
+            border: none;
         }
     `;
     document.head.appendChild(style);
@@ -569,23 +568,23 @@ function construirBarraAcciones(c, clave, reportesLocales, tokensPropios, permit
     barra.innerHTML = `
         <div class="comentario-acciones-izq">
             <div class="reaccion-wrapper">
-                <button type="button" class="btn-mini-accion btn-toggle-reacciones" title="Reaccionar">
-                    <span>${miReaccion || '😊'}</span><span>▾</span>
+                <button type="button" class="btn-texto-limpio btn-toggle-reacciones" title="Reaccionar">
+                    <span>${miReaccion || '😊'}</span><span style="font-size: 0.65rem;">▾</span>
                 </button>
                 <div class="reaccion-picker-popover">${pickerHTML}</div>
                 ${badgesHTML}
             </div>
-            ${permitirResponder ? `<button type="button" class="btn-mini-accion btn-abrir-respuesta">↳ Responder</button>` : ''}
+            ${permitirResponder ? `<button type="button" class="btn-texto-limpio btn-abrir-respuesta">Responder</button>` : ''}
         </div>
         <div class="comentario-acciones-der">
-            ${esMio ? `<button type="button" class="btn-mini-accion btn-mini-eliminar btn-eliminar-propio">Eliminar</button>` : ''}
-            <button type="button" class="btn-mini-accion btn-reportar-comentario" ${yaReportado ? 'disabled' : ''}>
+            ${esMio ? `<button type="button" class="btn-texto-limpio btn-texto-eliminar btn-eliminar-propio">Eliminar</button>` : ''}
+            <button type="button" class="btn-texto-limpio btn-reportar-comentario" ${yaReportado ? 'disabled' : ''}>
                 ${yaReportado ? 'Reportado' : 'Reportar'}
             </button>
         </div>
     `;
 
-    // Eventos del selector compacto de emojis
+    
     const btnToggleReac = barra.querySelector('.btn-toggle-reacciones');
     const popover = barra.querySelector('.reaccion-picker-popover');
     if (btnToggleReac && popover && c.id) {
@@ -613,13 +612,13 @@ function construirBarraAcciones(c, clave, reportesLocales, tokensPropios, permit
         });
     }
 
-    // Evento de eliminar comentario propio
+
     const btnEliminar = barra.querySelector('.btn-eliminar-propio');
     if (btnEliminar && c.id) {
         btnEliminar.addEventListener('click', () => eliminarComentarioPropio(c.id));
     }
 
-    // Evento de reportar
+
     const btnReportar = barra.querySelector('.btn-reportar-comentario');
     if (btnReportar && !yaReportado) {
         btnReportar.addEventListener('click', () => reportarComentario(clave, btnReportar));
@@ -646,7 +645,6 @@ async function cargarComentariosPublicos() {
             return;
         }
 
-        // Filtra ocultos por 3 o más reportes en MySQL
         const visibles = comentarios.filter((c, idx) => {
             const clave = String(c.id ?? `${c.ciudadano || c.nombre || 'anon'}-${c.fecha || idx}`);
             const reportesBD = Number(c.reportes ?? c.total_reportes ?? 0);
@@ -659,7 +657,7 @@ async function cargarComentariosPublicos() {
 
         visibles
             .filter((c) => c.parent_id)
-            .reverse() // Muestra las respuestas en orden cronológico dentro del hilo
+            .reverse()
             .forEach((resp) => {
                 const pid = String(resp.parent_id);
                 if (!respuestasPorPadre[pid]) respuestasPorPadre[pid] = [];
@@ -697,7 +695,6 @@ async function cargarComentariosPublicos() {
             const barraAcciones = construirBarraAcciones(c, clave, reportesLocales, tokensPropios, true);
             contenidoEl.appendChild(barraAcciones);
 
-            // Caja inline para responder al comentario
             const btnResponder = barraAcciones.querySelector('.btn-abrir-respuesta');
             if (btnResponder && c.id) {
                 btnResponder.addEventListener('click', () => {
@@ -712,9 +709,9 @@ async function cargarComentariosPublicos() {
                     caja.innerHTML = `
                         <input type="text" class="input-resp-nombre" placeholder="Tu nombre o Anónimo" maxlength="60">
                         <textarea class="input-resp-texto" rows="2" placeholder="Escribe una respuesta para ${escaparHTML(autor)}..." maxlength="400"></textarea>
-                        <div style="display: flex; gap: 6px; justify-content: flex-end;">
-                            <button type="button" class="btn-mini-accion btn-cancelar-resp">Cancelar</button>
-                            <button type="button" class="btn-mini-accion btn-enviar-resp" style="background: #508C46 !important; color: #fff !important; border-color: #508C46 !important;">Responder</button>
+                        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 2px;">
+                            <button type="button" class="btn-texto-limpio btn-cancelar-resp">Cancelar</button>
+                            <button type="button" class="btn-texto-limpio btn-enviar-resp" style="color: #508C46 !important; font-weight: 600 !important;">Responder</button>
                         </div>
                     `;
 
@@ -760,7 +757,6 @@ async function cargarComentariosPublicos() {
                 });
             }
 
-            // Renderizar respuestas hijas si existen
             const hijos = c.id ? (respuestasPorPadre[String(c.id)] || []) : [];
             if (hijos.length > 0) {
                 const contenedorHijos = document.createElement('div');
@@ -775,9 +771,9 @@ async function cargarComentariosPublicos() {
                     const divHijo = document.createElement('div');
                     divHijo.className = 'respuesta-item';
                     divHijo.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 3px;">
-                            <span style="font-weight: 600; font-size: 0.85rem; color: #1e293b;">↳ ${escaparHTML(hAutor)}</span>
-                            <span style="font-size: 0.75rem; color: #64748b;">${hFecha}</span>
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 2px;">
+                            <span style="font-weight: 600; font-size: 0.84rem; color: #1e293b;">${escaparHTML(hAutor)}</span>
+                            <span style="font-size: 0.74rem; color: #64748b;">${hFecha}</span>
                         </div>
                         <p style="margin: 0; font-size: 0.88rem; color: #334155;">${escaparHTML(hTexto)}</p>
                     `;
