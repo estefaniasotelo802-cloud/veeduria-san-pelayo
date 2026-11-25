@@ -689,7 +689,7 @@ function inicializarFormularioComentarios() {
     });
 }
 
-// 5. CHATBOT CON OPCIONES INTERACTIVAS DE OBRAS
+// 5. CHATBOT
 
 let obrasChatbotCache = [];
 
@@ -711,6 +711,17 @@ async function obtenerObrasParaChatbot() {
     }
 }
 
+function obtenerCirculitoObra(obra, index) {
+    const colores = ['🟢', '🟡', '🔵', '🟣', '🟠'];
+    const porcentaje = Math.max(0, Math.min(100, Number(obtenerAvanceObra(obra)) || 0));
+    const estado = String(obra.estado || '').toLowerCase();
+
+    if (porcentaje >= 100 || estado.includes('completado') || estado.includes('finalizado')) return '🟢';
+    if (estado.includes('proceso') || estado.includes('ejecución')) return '🟡';
+    if (estado.includes('pendiente')) return '🔴';
+    return colores[index % colores.length];
+}
+
 function formatearFichaObraChatbot(obra) {
     const avance = Math.max(0, Math.min(100, Number(obtenerAvanceObra(obra)) || 0));
     const presupuesto = Number(obra.presupuesto || 0).toLocaleString();
@@ -718,7 +729,7 @@ function formatearFichaObraChatbot(obra) {
     const fechaFin = obra.fecha_fin ? new Date(obra.fecha_fin).toLocaleDateString() : 'N/D';
 
     return [
-        `📌 ${obra.nombre || 'Obra sin nombre'}`,
+        `Aquí tienes el chisme oficial de "${obra.nombre || 'Obra sin nombre'}":`,
         `• Sector: ${obra.sector || 'No especificado'}`,
         `• Presupuesto: $${presupuesto}`,
         `• Estado: ${obra.estado || 'Pendiente'}`,
@@ -727,59 +738,70 @@ function formatearFichaObraChatbot(obra) {
     ].join('\n');
 }
 
-function responderChatbot(texto, obrasDisponibles = []) {
-    const lower = texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+function formatearListadoObrasChatbot(obras) {
+    if (!Array.isArray(obras) || obras.length === 0) {
+        return 'Por ahora no hay obras registradas en el radar. ¡Qué tranquilidad o qué misterio!';
+    }
 
-    if (/(hola|buenos dias|buenas tardes|saludos|menu|obras|listar)/.test(lower)) {
-        return {
-            texto: '¡Hola! Selecciona una de las obras registradas para ver su información al instante:',
-            mostrarOpciones: true
-        };
+    const lineas = obras.map((obra, idx) => {
+        const punto = obtenerCirculitoObra(obra, idx);
+        const nombre = obra.nombre || 'Obra sin nombre';
+        const estado = obra.estado || 'Sin estado';
+        return `${idx + 1}. ${punto} ${nombre} (${estado})`;
+    });
+
+    return [
+        '¡Claro que sí! Aquí van las obras registradas hasta ahora, sin enredos:',
+        '',
+        ...lineas,
+        '',
+        'Si quieres saber más de alguna, dime cuál te llama la atención.'
+    ].join('\n');
+}
+
+function responderChatbot(texto, obrasDisponibles = []) {
+    const raw = String(texto || '').trim();
+    const lower = raw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+    if (/(hola|buenos dias|buenas tardes|buenas noches|saludos)/.test(lower)) {
+        return '¡Hola! Aquí el asistente de San Pelayo reportándose al servicio. ¿Qué andamos averiguando hoy?';
     }
 
     if (/(gracias|muy amable|excelente|perfecto)/.test(lower)) {
-        return {
-            texto: 'Con gusto. Si deseas consultar otra obra, aquí tienes la lista rápida:',
-            mostrarOpciones: true
-        };
+        return '¡A la orden! Si necesitas revisar otro proyecto o chismosear avances, aquí sigo firme.';
+    }
+
+    const preguntaPorListado =
+        /(cuales son las obras|que obras|obras existentes|obras registradas|listado de obras|lista de obras|todas las obras|ver obras|mostrar obras)/.test(lower) ||
+        /^obras\??$/.test(lower);
+
+    if (preguntaPorListado) {
+        return formatearListadoObrasChatbot(obrasDisponibles);
     }
 
     const coincidencia = obrasDisponibles.find((obra) => {
         const nombreNorm = String(obra.nombre || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         const sectorNorm = String(obra.sector || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        return nombreNorm.includes(lower) || sectorNorm.includes(lower) || lower.split(/\s+/).some(p => p.length > 3 && nombreNorm.includes(p));
+        const palabras = lower.split(/\s+/).filter(p => p.length > 3);
+        return (lower.length > 3 && (nombreNorm.includes(lower) || sectorNorm.includes(lower))) ||
+            palabras.some(p => nombreNorm.includes(p) || sectorNorm.includes(p));
     });
 
     if (coincidencia) {
-        return {
-            texto: formatearFichaObraChatbot(coincidencia),
-            mostrarOpciones: true
-        };
+        return formatearFichaObraChatbot(coincidencia);
     }
 
     if (/(gas|pelayito|brisas)/.test(lower)) {
-        return {
-            texto: 'La obra de Expansión de Gas Domiciliario en Pelayito y Brisas del Sinú tiene un presupuesto de $92,800,000 y un avance del 95% (En pruebas técnicas).',
-            mostrarOpciones: true
-        };
+        return 'La obra de Expansión de Gas Domiciliario en Pelayito y Brisas del Sinú tiene un presupuesto de $92,800,000 y un avance del 95% (En pruebas técnicas). Ya casi huele a estufa encendida.';
     }
     if (/(puente|sabana|canuelar|cañuelar)/.test(lower)) {
-        return {
-            texto: 'La Reconstrucción y Mitigación del Puente Cañuelar en Sabana Nueva cuenta con un presupuesto de $87,000,000,000 y se encuentra finalizada (100%).',
-            mostrarOpciones: true
-        };
+        return 'La Reconstrucción y Mitigación del Puente Cañuelar en Sabana Nueva cuenta con un presupuesto de $87,000,000,000 y se encuentra finalizada (100%). Paso habilitado y sin rodeos.';
     }
     if (/(pavimentacion|pavimentación|guamas|carrillo|vial)/.test(lower)) {
-        return {
-            texto: 'La Pavimentación del Corredor Vial Carrillo - Las Guamas tiene un presupuesto de $10,000,000,000 y presenta un 50% de avance en ejecución.',
-            mostrarOpciones: true
-        };
+        return 'La Pavimentación del Corredor Vial Carrillo - Las Guamas tiene un presupuesto de $10,000,000,000 y presenta un 50% de avance en ejecución. Va por la mitad del camino.';
     }
 
-    return {
-        texto: 'No encontré una coincidencia exacta. Toca alguna obra de la lista para ver sus detalles:',
-        mostrarOpciones: true
-    };
+    return 'No me quedó muy claro qué buscas, pero si quieres ver las obras registradas pregúntame "¿cuáles son las obras?" o dime el nombre de alguna.';
 }
 
 function inicializarChatbot() {
@@ -792,8 +814,6 @@ function inicializarChatbot() {
 
     if (!chatToggleBtn || !chatBox || !chatMessages) return;
 
-    let bienvenidaMostrada = false;
-
     function agregarMensaje(texto, clase) {
         const msg = document.createElement('div');
         msg.className = `message ${clase}`;
@@ -803,49 +823,15 @@ function inicializarChatbot() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    async function agregarBotonesObras() {
-        const obras = await obtenerObrasParaChatbot();
-        if (!Array.isArray(obras) || obras.length === 0) return;
-
-        const contenedorOpciones = document.createElement('div');
-        contenedorOpciones.className = 'chat-obras-opciones';
-
-        obras.forEach((obra) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'chat-obra-btn';
-            btn.textContent = obra.nombre || 'Obra';
-            btn.addEventListener('click', () => {
-                agregarMensaje(obra.nombre || 'Obra', 'user-message');
-                setTimeout(() => {
-                    agregarMensaje(formatearFichaObraChatbot(obra), 'bot-message');
-                }, 250);
-            });
-            contenedorOpciones.appendChild(btn);
-        });
-
-        chatMessages.appendChild(contenedorOpciones);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
     async function procesarRespuestaBot(textoUsuario) {
         const obras = await obtenerObrasParaChatbot();
         const respuesta = responderChatbot(textoUsuario, obras);
-        agregarMensaje(respuesta.texto, 'bot-message');
-        if (respuesta.mostrarOpciones) {
-            await agregarBotonesObras();
-        }
+        agregarMensaje(respuesta, 'bot-message');
     }
 
     chatBox.style.display = 'none';
-    chatToggleBtn.addEventListener('click', async () => {
-        const abrir = chatBox.style.display === 'none';
-        chatBox.style.display = abrir ? 'flex' : 'none';
-        if (abrir && !bienvenidaMostrada) {
-            bienvenidaMostrada = true;
-            agregarMensaje('¡Hola! Estas son las obras registradas. Presiona cualquiera para ver su información:', 'bot-message');
-            await agregarBotonesObras();
-        }
+    chatToggleBtn.addEventListener('click', () => {
+        chatBox.style.display = chatBox.style.display === 'none' ? 'flex' : 'none';
     });
 
     chatCloseBtn?.addEventListener('click', () => {
