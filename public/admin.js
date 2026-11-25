@@ -74,6 +74,12 @@ function escaparHTMLAdmin(texto) {
         .replace(/'/g, '&#039;');
 }
 
+function resumirTextoCorto(texto, limite = 95) {
+    const limpio = String(texto || '').trim();
+    if (!limpio) return '';
+    return limpio.length > limite ? `${limpio.slice(0, limite).trim()}...` : limpio;
+}
+
 function obtenerReportesCiudadanos() {
     try {
         return JSON.parse(localStorage.getItem('veeduriaReportesComentarios') || '{}');
@@ -108,13 +114,23 @@ async function cargarObrasAdmin() {
         }
 
         obras.forEach(obra => {
+            const detalleCorto = resumirTextoCorto(
+                obra.justificacion || obra.ejecucion || obra.descripcion || obra.resumen || ''
+            );
+
             const fila = document.createElement('tr');
             fila.style.borderBottom = '1px solid #e2e8f0';
             fila.innerHTML = `
-                <td style="padding: 10px;">${obra.id}</td>
-                <td style="padding: 10px;">${escaparHTMLAdmin(obra.nombre)}</td>
-                <td style="padding: 10px;">${escaparHTMLAdmin(obra.sector)}</td>
-                <td style="padding: 10px; display: flex; gap: 8px;">
+                <td style="padding: 10px; vertical-align: top;">${obra.id}</td>
+                <td style="padding: 10px; vertical-align: top;">
+                    <div style="font-weight: 700; color: #0f172a;">${escaparHTMLAdmin(obra.nombre)}</div>
+                    ${detalleCorto
+                        ? `<div style="font-size: 12px; color: #475569; margin-top: 4px; line-height: 1.35;">${escaparHTMLAdmin(detalleCorto)}</div>`
+                        : `<div style="font-size: 12px; color: #94a3b8; font-style: italic; margin-top: 4px;">Sin descripción registrada</div>`
+                    }
+                </td>
+                <td style="padding: 10px; vertical-align: top;">${escaparHTMLAdmin(obra.sector)}</td>
+                <td style="padding: 10px; vertical-align: top; display: flex; gap: 8px;">
                     <button onclick="prepararEdicionPorId(${obra.id})" style="background-color: #0284c7 !important; color: white !important; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Editar</button>
                     <button onclick="eliminarObra(${obra.id})" style="background-color: #dc2626 !important; color: white !important; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Eliminar</button>
                 </td>
@@ -206,6 +222,11 @@ window.prepararEdicion = function(obra) {
     document.getElementById('fecha_inicio').value = obra.fecha_inicio ? obra.fecha_inicio.split('T')[0] : '';
     document.getElementById('fecha_fin').value = obra.fecha_fin ? obra.fecha_fin.split('T')[0] : '';
 
+    const justificacionInput = document.getElementById('justificacion');
+    const ejecucionInput = document.getElementById('ejecucion');
+    if (justificacionInput) justificacionInput.value = obra.justificacion || obra.descripcion || '';
+    if (ejecucionInput) ejecucionInput.value = obra.ejecucion || '';
+
     if (formTitle) formTitle.innerText = 'Actualizar Obra Registrada';
     if (btnSubmitForm) {
         btnSubmitForm.innerText = 'Actualizar Obra';
@@ -264,6 +285,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const avanceNum = Number(document.getElementById('avance_porcentaje').value) || 0;
             const coords = await obtenerCoordenadasPorSector(sectorValor);
 
+            const justificacionInput = document.getElementById('justificacion');
+            const ejecucionInput = document.getElementById('ejecucion');
+            const justificacionValor = justificacionInput ? justificacionInput.value.trim() : '';
+            const ejecucionValor = ejecucionInput ? ejecucionInput.value.trim() : '';
+
             const datosObra = {
                 nombre: document.getElementById('nombre').value.trim(),
                 sector: sectorValor,
@@ -274,7 +300,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 fecha_inicio: document.getElementById('fecha_inicio').value || null,
                 fecha_fin: document.getElementById('fecha_fin').value || null,
                 latitud: coords.latitud,
-                longitud: coords.longitud
+                longitud: coords.longitud,
+                justificacion: justificacionValor,
+                ejecucion: ejecucionValor
             };
 
             try {
