@@ -981,11 +981,7 @@ body.login-body .container {
   box-sizing: border-box;
 }
 
-body.login-body form {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-}
+
 
 .login-form h2,
 .login-card h2 {
