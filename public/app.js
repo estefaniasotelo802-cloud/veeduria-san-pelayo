@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', () => {
     obtenerObrasPublicas();
     inicializarMapa();
     inicializarChatbot();
-    inyectarEstilosComentariosInteractivos();
     cargarComentariosPublicos();
     inicializarFormularioComentarios();
     inicializarMenuMovilYAnimaciones();
@@ -27,20 +26,22 @@ function escaparHTML(texto) {
         .replace(/'/g, '&#039;');
 }
 
+function obtenerAvanceObra(obra) {
+    const val = obra.avance_porcentaje ?? obra.porcentaje ?? obra.avance ?? 0;
+    return val === '' ? 0 : val;
+}
+
 // 1. GESTIÓN DE LA TABLA PÚBLICA
 
 async function obtenerObrasPublicas() {
     try {
         const respuesta = await fetch('/obras');
-        
-        if (!respuesta.ok) {
-            throw new Error('Error al conectar con el servidor para obtener las obras.');
-        }
+        if (!respuesta.ok) throw new Error('Error al conectar con el servidor para obtener las obras.');
 
         const obras = await respuesta.json();
         const tablaBody = document.getElementById('tablaObrasBody');
-        
         if (!tablaBody) return;
+
         tablaBody.innerHTML = '';
 
         if (obras.length === 0) {
@@ -50,13 +51,9 @@ async function obtenerObrasPublicas() {
 
         obras.forEach(obra => {
             const fila = document.createElement('tr');
-            fila.style.cursor = 'pointer'; 
-            
-            const brutoPorcentaje = obra.avance_porcentaje !== undefined && obra.avance_porcentaje !== null ? obra.avance_porcentaje : 
-                                   (obra.porcentaje !== undefined && obra.porcentaje !== null ? obra.porcentaje : 
-                                   (obra.avance !== undefined && obra.avance !== null ? obra.avance : 0));
-            const porcentajeNum = Math.max(0, Math.min(100, Number(brutoPorcentaje) || 0));
+            fila.style.cursor = 'pointer';
 
+            const porcentajeNum = Math.max(0, Math.min(100, Number(obtenerAvanceObra(obra)) || 0));
             const fechaInicio = obra.fecha_inicio ? new Date(obra.fecha_inicio).toLocaleDateString() : 'N/D';
             const fechaFin = obra.fecha_fin ? new Date(obra.fecha_fin).toLocaleDateString() : 'N/D';
 
@@ -74,7 +71,7 @@ async function obtenerObrasPublicas() {
                 <td style="color: #475569; font-size: 0.9rem;">${fechaInicio}</td>
                 <td style="color: #475569; font-size: 0.9rem;">${fechaFin}</td>
             `;
-            
+
             fila.addEventListener('click', () => {
                 if (marcadoresObras[obra.id] && mapaGlobal) {
                     const marker = marcadoresObras[obra.id];
@@ -82,10 +79,9 @@ async function obtenerObrasPublicas() {
                     marker.openPopup();
                 }
             });
-            
+
             tablaBody.appendChild(fila);
         });
-
     } catch (error) {
         console.error('Error:', error);
         const tablaBody = document.getElementById('tablaObrasBody');
@@ -103,16 +99,13 @@ function obtenerClaseEstado(estado) {
     return 'estado-pendiente';
 }
 
-// 2. GESTIÓN DEL MAPA  
+// 2. GESTIÓN DEL MAPA
 
 function inicializarMapa() {
     const mapElement = document.getElementById('map');
     if (!mapElement) return;
 
-    mapaGlobal = L.map('map', {
-        minZoom: 12,
-        maxZoom: 19
-    }).setView([8.9564, -75.8369], 14);
+    mapaGlobal = L.map('map', { minZoom: 12, maxZoom: 19 }).setView([8.9564, -75.8369], 14);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
@@ -123,12 +116,8 @@ function inicializarMapa() {
 }
 
 function obtenerColorPorEstado(estado, porcentaje) {
-    if (porcentaje >= 100 || (estado && estado.toLowerCase().includes('completado'))) {
-        return '#2ecc71';
-    }
-    if (estado && (estado.toLowerCase().includes('proceso') || estado.toLowerCase().includes('ejecución'))) {
-        return '#f39c12';
-    }
+    if (porcentaje >= 100 || (estado && estado.toLowerCase().includes('completado'))) return '#2ecc71';
+    if (estado && (estado.toLowerCase().includes('proceso') || estado.toLowerCase().includes('ejecución'))) return '#f39c12';
     return '#e74c3c';
 }
 
@@ -142,12 +131,7 @@ async function cargarMarcadoresEnMapa(map) {
         obras.forEach(obra => {
             const lat = obra.latitud ? parseFloat(obra.latitud) : 8.9564;
             const lng = obra.longitud ? parseFloat(obra.longitud) : -75.8369;
-
-            const brutoPorcentaje = obra.avance_porcentaje !== undefined && obra.avance_porcentaje !== null ? obra.avance_porcentaje : 
-                                   (obra.porcentaje !== undefined && obra.porcentaje !== null ? obra.porcentaje : 
-                                   (obra.avance !== undefined && obra.avance !== null ? obra.avance : 0));
-            const porcentajeVal = brutoPorcentaje !== '' ? brutoPorcentaje : 0;
-
+            const porcentajeVal = obtenerAvanceObra(obra);
             const colorPin = obtenerColorPorEstado(obra.estado, porcentajeVal);
 
             const iconoPinSvg = L.divIcon({
@@ -164,8 +148,7 @@ async function cargarMarcadoresEnMapa(map) {
             });
 
             const marker = L.marker([lat, lng], { icon: iconoPinSvg }).addTo(map);
-
-            const contenidoPopup = `
+            marker.bindPopup(`
                 <div style="font-family: Arial, sans-serif; min-width: 180px;">
                     <h4 style="margin: 0 0 5px 0; color: #2c3e50;">${escaparHTML(obra.nombre)}</h4>
                     <p style="margin: 3px 0;"><strong>Sector:</strong> ${escaparHTML(obra.sector)}</p>
@@ -173,12 +156,9 @@ async function cargarMarcadoresEnMapa(map) {
                     <p style="margin: 3px 0;"><strong>Estado:</strong> ${escaparHTML(obra.estado)}</p>
                     <p style="margin: 3px 0;"><strong>Avance:</strong> ${porcentajeVal}%</p>
                 </div>
-            `;
-
-            marker.bindPopup(contenidoPopup);
+            `);
             marcadoresObras[obra.id] = marker;
         });
-
     } catch (error) {
         console.error('Error al cargar los marcadores en el mapa:', error);
     }
@@ -194,187 +174,32 @@ const CATALOGO_EMOJIS_LIBRE = [
     '😮', '😲', '😯', '😢', '😭', '😡', '🤬', '😕', '😟', '😴'
 ];
 
-function inyectarEstilosComentariosInteractivos() {
-    if (document.getElementById('estilos-comentarios-interactivos')) return;
-    const style = document.createElement('style');
-    style.id = 'estilos-comentarios-interactivos';
-    style.textContent = `
-        .comentario-acciones-bar {
-            margin-top: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            font-size: 0.78rem;
-            color: #64748b;
-        }
-        .comentario-acciones-izq,
-        .comentario-acciones-der {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .btn-texto-limpio {
-            width: auto !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            font-size: 0.78rem !important;
-            font-weight: 500 !important;
-            background: transparent !important;
-            color: #64748b !important;
-            border: none !important;
-            box-shadow: none !important;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 3px;
-        }
-        .btn-texto-limpio:hover:not(:disabled) {
-            color: #0f172a !important;
-            text-decoration: underline;
-        }
-        .btn-texto-limpio:disabled {
-            opacity: 0.55;
-            cursor: default;
-            text-decoration: none;
-        }
-        .btn-flecha-reaccion {
-            font-size: 0.9rem !important;
-            line-height: 1 !important;
-            padding: 0 3px !important;
-            text-decoration: none !important;
-        }
-        .btn-texto-eliminar {
-            color: #dc2626 !important;
-        }
-        .btn-texto-eliminar:hover {
-            color: #991b1b !important;
-        }
-        .reaccion-wrapper {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            flex-wrap: wrap;
-        }
-        .reaccion-picker-popover {
-            position: absolute;
-            bottom: calc(100% + 6px);
-            left: 0;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            padding: 6px 8px;
-            display: none;
-            flex-direction: column;
-            gap: 6px;
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.14);
-            z-index: 30;
-            min-width: 196px;
-        }
-        .reaccion-picker-popover.abierto {
-            display: flex;
-        }
-        .fila-emojis-rapidos {
-            display: flex;
-            align-items: center;
-            gap: 2px;
-        }
-        .btn-emoji-opcion {
-            width: auto !important;
-            padding: 2px 5px !important;
-            font-size: 0.98rem !important;
-            background: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            border-radius: 6px !important;
-            cursor: pointer;
-            transition: transform 0.12s ease, background 0.12s ease;
-        }
-        .btn-emoji-opcion:hover {
-            transform: scale(1.18);
-            background: #f1f5f9 !important;
-        }
-        .btn-mas-emojis {
-            font-weight: 700 !important;
-            color: #0284c7 !important;
-            padding: 2px 7px !important;
-        }
-        .grid-emojis-amplio {
-            display: none;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 2px;
-            max-height: 120px;
-            overflow-y: auto;
-            padding-top: 6px;
-            border-top: 1px solid #f1f5f9;
-        }
-        .grid-emojis-amplio.visible {
-            display: grid;
-        }
-        .badge-reaccion-activa {
-            width: auto !important;
-            padding: 1px 6px !important;
-            font-size: 0.72rem !important;
-            border-radius: 999px !important;
-            background: #f1f5f9 !important;
-            color: #334155 !important;
-            border: 1px solid #e2e8f0 !important;
-            box-shadow: none !important;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 3px;
-        }
-        .badge-reaccion-activa.mia {
-            background: #e0f2fe !important;
-            border-color: #7dd3fc !important;
-            color: #0369a1 !important;
-            font-weight: 600;
-        }
-        .caja-respuesta-inline {
-            margin-top: 8px;
-            padding: 8px 10px;
-            background: #f8fafc;
-            border-left: 3px solid #08AFE6;
-            border-radius: 6px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .caja-respuesta-inline input,
-        .caja-respuesta-inline textarea {
-            font-size: 0.84rem !important;
-            padding: 6px 9px !important;
-            border-radius: 6px !important;
-            border: 1px solid #cbd5e1 !important;
-            width: 100%;
-            background: #ffffff;
-        }
-        .lista-respuestas-hilo {
-            margin-top: 8px;
-            padding-left: 12px;
-            border-left: 2px solid #e2e8f0;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .respuesta-item {
-            padding: 2px 0;
-            background: transparent;
-            border: none;
-        }
-    `;
-    document.head.appendChild(style);
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.reaccion-wrapper')) {
+        cerrarPopoversReaccion();
+    }
+});
 
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.reaccion-wrapper')) {
-            document.querySelectorAll('.reaccion-picker-popover.abierto').forEach((el) => {
-                el.classList.remove('abierto');
-            });
-        }
+function cerrarPopoversReaccion() {
+    document.querySelectorAll('.reaccion-picker-popover.abierto').forEach((el) => {
+        el.classList.remove('abierto');
+        const grid = el.querySelector('.grid-emojis-amplio');
+        if (grid) grid.classList.remove('visible');
     });
+}
+
+function leerJSONLocal(clave, valorDefecto) {
+    try {
+        return JSON.parse(localStorage.getItem(clave) || JSON.stringify(valorDefecto));
+    } catch (e) {
+        return valorDefecto;
+    }
+}
+
+function guardarJSONLocal(clave, valor) {
+    try {
+        localStorage.setItem(clave, JSON.stringify(valor));
+    } catch (e) {}
 }
 
 function obtenerDeviceId() {
@@ -390,29 +215,19 @@ function obtenerDeviceId() {
     }
 }
 
-function obtenerTokensPropios() {
-    try {
-        return JSON.parse(localStorage.getItem('veeduriaMisComentariosTokens') || '{}');
-    } catch (e) {
-        return {};
-    }
-}
+const obtenerTokensPropios = () => leerJSONLocal('veeduriaMisComentariosTokens', {});
 
 function guardarTokenPropio(comentarioId, token) {
     if (!comentarioId || !token) return;
-    try {
-        const tokens = obtenerTokensPropios();
-        tokens[String(comentarioId)] = token;
-        localStorage.setItem('veeduriaMisComentariosTokens', JSON.stringify(tokens));
-    } catch (e) {}
+    const tokens = obtenerTokensPropios();
+    tokens[String(comentarioId)] = token;
+    guardarJSONLocal('veeduriaMisComentariosTokens', tokens);
 }
 
 function eliminarTokenPropio(comentarioId) {
-    try {
-        const tokens = obtenerTokensPropios();
-        delete tokens[String(comentarioId)];
-        localStorage.setItem('veeduriaMisComentariosTokens', JSON.stringify(tokens));
-    } catch (e) {}
+    const tokens = obtenerTokensPropios();
+    delete tokens[String(comentarioId)];
+    guardarJSONLocal('veeduriaMisComentariosTokens', tokens);
 }
 
 function validarComentarioAutomatico(nombre, texto) {
@@ -437,8 +252,7 @@ function validarComentarioAutomatico(nombre, texto) {
         return { valido: false, motivo: 'Ya enviaste ese mismo mensaje hace unos segundos.' };
     }
 
-    const tieneEnlace = /(https?:\/\/|www\.|\.(com|co|net|org|io|gg|me|ly)\b)/i.test(limpio);
-    if (tieneEnlace) {
+    if (/(https?:\/\/|www\.|\.(com|co|net|org|io|gg|me|ly)\b)/i.test(limpio)) {
         return { valido: false, motivo: 'No se permiten enlaces ni direcciones web en el buzón ciudadano.' };
     }
 
@@ -450,14 +264,11 @@ function validarComentarioAutomatico(nombre, texto) {
         'idiota', 'imbecil', 'imbécil', 'estupido', 'estúpido',
         'basura', 'mierda', 'puta', 'puto', 'malparido', 'gonorrea', 'hp'
     ];
-    const textoNormalizado = limpio
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '');
+    const normalizado = limpio.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
     const encontrada = palabrasBloqueadas.find((palabra) => {
         const escapada = palabra.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        return new RegExp(`\\b${escapada}\\b`, 'i').test(textoNormalizado);
+        return new RegExp(`\\b${escapada}\\b`, 'i').test(normalizado);
     });
 
     if (encontrada) {
@@ -481,27 +292,15 @@ function mostrarAvisoComentario(mensaje, esError = true) {
     aviso.style.color = esError ? '#b91c1c' : '#166534';
 }
 
-function obtenerReportesGuardados() {
-    try {
-        return JSON.parse(localStorage.getItem('veeduriaReportesComentarios') || '{}');
-    } catch (e) {
-        return {};
-    }
-}
-
-function guardarReportes(reportes) {
-    try {
-        localStorage.setItem('veeduriaReportesComentarios', JSON.stringify(reportes));
-    } catch (e) {}
-}
+const obtenerReportesGuardados = () => leerJSONLocal('veeduriaReportesComentarios', {});
+const guardarReportes = (reportes) => guardarJSONLocal('veeduriaReportesComentarios', reportes);
 
 function obtenerIniciales(nombre) {
     if (!nombre || nombre.toLowerCase() === 'anónimo') return '👤';
-    const partes = nombre.trim().split(' ');
-    if (partes.length >= 2) {
-        return (partes[0][0] + partes[1][0]).toUpperCase();
-    }
-    return partes[0].substring(0, 2).toUpperCase();
+    const partes = nombre.trim().split(/\s+/);
+    return partes.length >= 2
+        ? (partes[0][0] + partes[1][0]).toUpperCase()
+        : partes[0].substring(0, 2).toUpperCase();
 }
 
 async function reaccionarComentario(comentarioId, emoji) {
@@ -509,10 +308,7 @@ async function reaccionarComentario(comentarioId, emoji) {
         const resp = await fetch(`/obras/comentarios/${encodeURIComponent(comentarioId)}/reaccionar`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                emoji,
-                deviceId: obtenerDeviceId()
-            })
+            body: JSON.stringify({ emoji, deviceId: obtenerDeviceId() })
         });
         if (!resp.ok) {
             const err = await resp.json().catch(() => ({}));
@@ -526,19 +322,13 @@ async function reaccionarComentario(comentarioId, emoji) {
 }
 
 async function eliminarComentarioPropio(comentarioId) {
-    const tokens = obtenerTokensPropios();
-    const token = tokens[String(comentarioId)];
-    if (!token) return;
-
-    if (!confirm('¿Deseas eliminar tu comentario?')) return;
+    const token = obtenerTokensPropios()[String(comentarioId)];
+    if (!token || !confirm('¿Deseas eliminar tu comentario?')) return;
 
     try {
         const respuesta = await fetch(`/obras/comentarios/${encodeURIComponent(comentarioId)}`, {
             method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-delete-token': token
-            },
+            headers: { 'Content-Type': 'application/json', 'x-delete-token': token },
             body: JSON.stringify({ delete_token: token })
         });
 
@@ -642,10 +432,9 @@ function construirBarraAcciones(c, clave, reportesLocales, tokensPropios, permit
     if (btnToggleReac && popover && c.id) {
         btnToggleReac.addEventListener('click', (e) => {
             e.stopPropagation();
-            document.querySelectorAll('.reaccion-picker-popover.abierto').forEach((otro) => {
-                if (otro !== popover) otro.classList.remove('abierto');
-            });
-            popover.classList.toggle('abierto');
+            const estabaAbierto = popover.classList.contains('abierto');
+            cerrarPopoversReaccion();
+            if (!estabaAbierto) popover.classList.add('abierto');
         });
 
         if (btnMas && gridAmplio) {
@@ -658,8 +447,7 @@ function construirBarraAcciones(c, clave, reportesLocales, tokensPropios, permit
         popover.querySelectorAll('.btn-emoji-opcion[data-emoji]').forEach((btnEm) => {
             btnEm.addEventListener('click', (e) => {
                 e.stopPropagation();
-                popover.classList.remove('abierto');
-                if (gridAmplio) gridAmplio.classList.remove('visible');
+                cerrarPopoversReaccion();
                 reaccionarComentario(c.id, btnEm.dataset.emoji);
             });
         });
@@ -672,10 +460,9 @@ function construirBarraAcciones(c, clave, reportesLocales, tokensPropios, permit
         });
     }
 
-    const btnEliminar = barra.querySelector('.btn-eliminar-propio');
-    if (btnEliminar && c.id) {
-        btnEliminar.addEventListener('click', () => eliminarComentarioPropio(c.id));
-    }
+    barra.querySelector('.btn-eliminar-propio')?.addEventListener('click', () => {
+        if (c.id) eliminarComentarioPropio(c.id);
+    });
 
     const btnReportar = barra.querySelector('.btn-reportar-comentario');
     if (btnReportar && !yaReportado) {
@@ -683,6 +470,37 @@ function construirBarraAcciones(c, clave, reportesLocales, tokensPropios, permit
     }
 
     return barra;
+}
+
+async function enviarComentarioAlServidor(payload) {
+    const resp = await fetch('/obras/comentarios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) {
+        throw new Error(data.error || 'No se pudo registrar el comentario.');
+    }
+    if (data.id && data.delete_token) {
+        guardarTokenPropio(data.id, data.delete_token);
+    }
+    ultimoComentarioEnviado = { texto: payload.comentario, timestamp: Date.now() };
+    return data;
+}
+
+function crearTarjetaComentarioHTML(autor, iniciales, fechaFormateada, obraInfo, textoComentario) {
+    return `
+        <div class="comentario-avatar">${escaparHTML(iniciales)}</div>
+        <div class="comentario-contenido">
+            <div class="comentario-header">
+                <span class="comentario-autor">${escaparHTML(autor)}</span>
+                <span class="comentario-fecha">${fechaFormateada}</span>
+            </div>
+            ${obraInfo}
+            <p class="comentario-texto">${escaparHTML(textoComentario)}</p>
+        </div>
+    `;
 }
 
 async function cargarComentariosPublicos() {
@@ -705,22 +523,17 @@ async function cargarComentariosPublicos() {
 
         const visibles = comentarios.filter((c, idx) => {
             const clave = String(c.id ?? `${c.ciudadano || c.nombre || 'anon'}-${c.fecha || idx}`);
-            const reportesBD = Number(c.reportes ?? c.total_reportes ?? 0);
-            const reportesDispositivo = Number(reportesLocales[clave] || 0);
-            return Math.max(reportesBD, reportesDispositivo) < 3;
+            const total = Math.max(Number(c.reportes ?? c.total_reportes ?? 0), Number(reportesLocales[clave] || 0));
+            return total < 3;
         });
 
         const principales = visibles.filter((c) => !c.parent_id);
         const respuestasPorPadre = {};
 
-        visibles
-            .filter((c) => c.parent_id)
-            .reverse()
-            .forEach((resp) => {
-                const pid = String(resp.parent_id);
-                if (!respuestasPorPadre[pid]) respuestasPorPadre[pid] = [];
-                respuestasPorPadre[pid].push(resp);
-            });
+        visibles.filter((c) => c.parent_id).reverse().forEach((resp) => {
+            const pid = String(resp.parent_id);
+            (respuestasPorPadre[pid] ||= []).push(resp);
+        });
 
         if (principales.length === 0) {
             contenedorComentarios.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">No hay comentarios visibles en este momento.</p>';
@@ -729,25 +542,19 @@ async function cargarComentariosPublicos() {
 
         principales.forEach((c, idx) => {
             const autor = c.ciudadano || c.nombre || 'Anónimo';
-            const iniciales = obtenerIniciales(autor);
-            const textoComentario = c.comentario || c.texto || '';
             const fechaFormateada = c.fecha ? new Date(c.fecha).toLocaleDateString() : 'Reciente';
             const obraInfo = c.obra_nombre ? `<div style="font-size: 12px; color: #0284c7; margin-top: 2px;">Obra: ${escaparHTML(c.obra_nombre)}</div>` : '';
             const clave = String(c.id ?? `${autor}-${c.fecha || idx}`);
 
             const divComentario = document.createElement('div');
             divComentario.className = 'comentario-item';
-            divComentario.innerHTML = `
-                <div class="comentario-avatar">${escaparHTML(iniciales)}</div>
-                <div class="comentario-contenido">
-                    <div class="comentario-header">
-                        <span class="comentario-autor">${escaparHTML(autor)}</span>
-                        <span class="comentario-fecha">${fechaFormateada}</span>
-                    </div>
-                    ${obraInfo}
-                    <p class="comentario-texto">${escaparHTML(textoComentario)}</p>
-                </div>
-            `;
+            divComentario.innerHTML = crearTarjetaComentarioHTML(
+                autor,
+                obtenerIniciales(autor),
+                fechaFormateada,
+                obraInfo,
+                c.comentario || c.texto || ''
+            );
 
             const contenidoEl = divComentario.querySelector('.comentario-contenido');
             const barraAcciones = construirBarraAcciones(c, clave, reportesLocales, tokensPropios, true);
@@ -756,13 +563,13 @@ async function cargarComentariosPublicos() {
             const btnResponder = barraAcciones.querySelector('.btn-abrir-respuesta');
             if (btnResponder && c.id) {
                 btnResponder.addEventListener('click', () => {
-                    let caja = contenidoEl.querySelector('.caja-respuesta-inline');
-                    if (caja) {
-                        caja.remove();
+                    const cajaExistente = contenidoEl.querySelector('.caja-respuesta-inline');
+                    if (cajaExistente) {
+                        cajaExistente.remove();
                         return;
                     }
 
-                    caja = document.createElement('div');
+                    const caja = document.createElement('div');
                     caja.className = 'caja-respuesta-inline';
                     caja.innerHTML = `
                         <input type="text" class="input-resp-nombre" placeholder="Tu nombre o Anónimo" maxlength="60">
@@ -775,39 +582,21 @@ async function cargarComentariosPublicos() {
 
                     caja.querySelector('.btn-cancelar-resp').addEventListener('click', () => caja.remove());
                     caja.querySelector('.btn-enviar-resp').addEventListener('click', async () => {
-                        const nombreVal = caja.querySelector('.input-resp-nombre').value;
-                        const textoVal = caja.querySelector('.input-resp-texto').value;
-                        const validacion = validarComentarioAutomatico(nombreVal, textoVal);
-
-                        if (!validacion.valido) {
-                            alert(validacion.motivo);
-                            return;
-                        }
+                        const validacion = validarComentarioAutomatico(
+                            caja.querySelector('.input-resp-nombre').value,
+                            caja.querySelector('.input-resp-texto').value
+                        );
+                        if (!validacion.valido) return alert(validacion.motivo);
 
                         try {
-                            const resp = await fetch('/obras/comentarios', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    ciudadano: validacion.autor,
-                                    comentario: validacion.texto,
-                                    parent_id: c.id
-                                })
+                            await enviarComentarioAlServidor({
+                                ciudadano: validacion.autor,
+                                comentario: validacion.texto,
+                                parent_id: c.id
                             });
-
-                            if (resp.ok) {
-                                const data = await resp.json().catch(() => ({}));
-                                if (data.id && data.delete_token) {
-                                    guardarTokenPropio(data.id, data.delete_token);
-                                }
-                                ultimoComentarioEnviado = { texto: validacion.texto, timestamp: Date.now() };
-                                await cargarComentariosPublicos();
-                            } else {
-                                const err = await resp.json().catch(() => ({}));
-                                alert(err.error || 'No se pudo publicar la respuesta.');
-                            }
+                            await cargarComentariosPublicos();
                         } catch (e) {
-                            alert('No se pudo conectar con el servidor.');
+                            alert(e.message || 'No se pudo conectar con el servidor.');
                         }
                     });
 
@@ -822,7 +611,6 @@ async function cargarComentariosPublicos() {
 
                 hijos.forEach((h, hIdx) => {
                     const hAutor = h.ciudadano || h.nombre || 'Anónimo';
-                    const hTexto = h.comentario || h.texto || '';
                     const hFecha = h.fecha ? new Date(h.fecha).toLocaleDateString() : 'Reciente';
                     const hClave = String(h.id ?? `${hAutor}-${h.fecha || hIdx}`);
 
@@ -833,11 +621,9 @@ async function cargarComentariosPublicos() {
                             <span style="font-weight: 600; font-size: 0.84rem; color: #1e293b;">${escaparHTML(hAutor)}</span>
                             <span style="font-size: 0.74rem; color: #64748b;">${hFecha}</span>
                         </div>
-                        <p style="margin: 0; font-size: 0.88rem; color: #334155;">${escaparHTML(hTexto)}</p>
+                        <p style="margin: 0; font-size: 0.88rem; color: #334155;">${escaparHTML(h.comentario || h.texto || '')}</p>
                     `;
-
-                    const barraHijo = construirBarraAcciones(h, hClave, reportesLocales, tokensPropios, false);
-                    divHijo.appendChild(barraHijo);
+                    divHijo.appendChild(construirBarraAcciones(h, hClave, reportesLocales, tokensPropios, false));
                     contenedorHijos.appendChild(divHijo);
                 });
 
@@ -846,7 +632,6 @@ async function cargarComentariosPublicos() {
 
             contenedorComentarios.appendChild(divComentario);
         });
-
     } catch (error) {
         console.error('Error al cargar comentarios públicos:', error);
     }
@@ -863,7 +648,6 @@ function inicializarFormularioComentarios() {
 
         const inputNombre = document.getElementById('nombreUsuario') || document.querySelector('input[name="ciudadano"]') || document.querySelector('input[type="text"]');
         const inputTexto = document.getElementById('textoComentario') || document.querySelector('textarea');
-
         if (!inputNombre || !inputTexto) return;
 
         const validacion = validarComentarioAutomatico(inputNombre.value, inputTexto.value);
@@ -872,45 +656,43 @@ function inicializarFormularioComentarios() {
             return;
         }
 
-        const nuevoComentario = {
-            ciudadano: validacion.autor,
-            comentario: validacion.texto
-        };
-
         try {
-            const respuesta = await fetch('/obras/comentarios', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(nuevoComentario)
+            await enviarComentarioAlServidor({
+                ciudadano: validacion.autor,
+                comentario: validacion.texto
             });
-
-            if (respuesta.ok) {
-                const data = await respuesta.json().catch(() => ({}));
-                if (data.id && data.delete_token) {
-                    guardarTokenPropio(data.id, data.delete_token);
-                }
-                ultimoComentarioEnviado = {
-                    texto: validacion.texto,
-                    timestamp: Date.now()
-                };
-                inputNombre.value = '';
-                inputTexto.value = '';
-                mostrarAvisoComentario('Tu comentario fue publicado correctamente.', false);
-                cargarComentariosPublicos();
-            } else {
-                const dataError = await respuesta.json().catch(() => ({}));
-                mostrarAvisoComentario(dataError.error || 'No se pudo registrar el comentario.', true);
-            }
+            inputNombre.value = '';
+            inputTexto.value = '';
+            mostrarAvisoComentario('Tu comentario fue publicado correctamente.', false);
+            cargarComentariosPublicos();
         } catch (error) {
-            console.error('Error de red al enviar el comentario:', error);
-            mostrarAvisoComentario('No se pudo conectar con el servidor.', true);
+            console.error('Error al enviar el comentario:', error);
+            mostrarAvisoComentario(error.message || 'No se pudo conectar con el servidor.', true);
         }
     });
 }
 
 // 5. CHATBOT
+
+function responderChatbot(texto) {
+    const lower = texto.toLowerCase();
+    if (/(hola|buenos dias|buenas tardes|saludos)/.test(lower)) {
+        return '¡Hola! Es un gusto saludarte. ¿Sobre cuál de las obras de San Pelayo te gustaría consultar hoy?';
+    }
+    if (/(gracias|muy amable|excelente|perfecto)/.test(lower)) {
+        return 'Con gusto, fue un placer ayudarte. Si tienes alguna otra duda sobre las obras del municipio, aquí estaré.';
+    }
+    if (/(gas|pelayito|brisas)/.test(lower)) {
+        return 'La obra de Expansión de Gas Domiciliario en Pelayito y Brisas del Sinú tiene un presupuesto de $92,800,000 y un avance del 95% (En pruebas técnicas).';
+    }
+    if (/(puente|sabana|cañuelar)/.test(lower)) {
+        return 'La Reconstrucción y Mitigación del Puente Cañuelar en Sabana Nueva cuenta con un presupuesto de $87,000,000,000 y se encuentra finalizada (100%).';
+    }
+    if (/(pavimentación|guamas|carrillo|vial)/.test(lower)) {
+        return 'La Pavimentación del Corredor Vial Carrillo - Las Guamas tiene un presupuesto de $10,000,000,000 y presenta un 50% de avance en ejecución.';
+    }
+    return 'No logré identificar exactamente el proyecto del que hablas, pero puedes preguntarme libremente por el gas en Pelayito, el puente de Sabana Nueva o la vía a Las Guamas. ¿A cuál de ellas te refieres?';
+}
 
 function inicializarChatbot() {
     const chatToggleBtn = document.getElementById('chat-toggle-btn');
@@ -923,61 +705,33 @@ function inicializarChatbot() {
     if (!chatToggleBtn || !chatBox) return;
 
     chatBox.style.display = 'none';
-
     chatToggleBtn.addEventListener('click', () => {
         chatBox.style.display = chatBox.style.display === 'none' ? 'flex' : 'none';
     });
+    chatCloseBtn?.addEventListener('click', () => {
+        chatBox.style.display = 'none';
+    });
 
-    if (chatCloseBtn) {
-        chatCloseBtn.addEventListener('click', () => {
-            chatBox.style.display = 'none';
-        });
+    function agregarMensaje(texto, clase) {
+        const msg = document.createElement('div');
+        msg.className = `message ${clase}`;
+        msg.textContent = texto;
+        chatMessages.appendChild(msg);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    async function enviarMensaje() {
+    function enviarMensaje() {
         const texto = chatInput.value.trim();
         if (!texto) return;
-
-        const userMsg = document.createElement('div');
-        userMsg.className = 'message user-message';
-        userMsg.textContent = texto;
-        chatMessages.appendChild(userMsg);
+        agregarMensaje(texto, 'user-message');
         chatInput.value = '';
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-
-        setTimeout(() => {
-            const botMsg = document.createElement('div');
-            botMsg.className = 'message bot-message';
-            
-            const lower = texto.toLowerCase();
-
-            if (lower.includes('hola') || lower.includes('buenos dias') || lower.includes('buenas tardes') || lower.includes('saludos')) {
-                botMsg.textContent = "¡Hola! Es un gusto saludarte. ¿Sobre cuál de las obras de San Pelayo te gustaría consultar hoy?";
-            } else if (lower.includes('gracias') || lower.includes('muy amable') || lower.includes('excelente') || lower.includes('perfecto')) {
-                botMsg.textContent = "Con gusto, fue un placer ayudarte. Si tienes alguna otra duda sobre las obras del municipio, aquí estaré.";
-            } else if (lower.includes('gas') || lower.includes('pelayito') || lower.includes('brisas')) {
-                botMsg.textContent = "La obra de Expansión de Gas Domiciliario en Pelayito y Brisas del Sinú tiene un presupuesto de $92,800,000 y un avance del 95% (En pruebas técnicas).";
-            } else if (lower.includes('puente') || lower.includes('sabana') || lower.includes('cañuelar')) {
-                botMsg.textContent = "La Reconstrucción y Mitigación del Puente Cañuelar en Sabana Nueva cuenta con un presupuesto de $87,000,000,000 y se encuentra finalizada (100%).";
-            } else if (lower.includes('pavimentación') || lower.includes('guamas') || lower.includes('carrillo') || lower.includes('vial')) {
-                botMsg.textContent = "La Pavimentación del Corredor Vial Carrillo - Las Guamas tiene un presupuesto de $10,000,000,000 y presenta un 50% de avance en ejecución.";
-            } else {
-                botMsg.textContent = "No logré identificar exactamente el proyecto del que hablas, pero puedes preguntarme libremente por el gas en Pelayito, el puente de Sabana Nueva o la vía a Las Guamas. ¿A cuál de ellas te refieres?";
-            }
-
-            chatMessages.appendChild(botMsg);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }, 600);
+        setTimeout(() => agregarMensaje(responderChatbot(texto), 'bot-message'), 600);
     }
 
-    if (chatSendBtn) {
-        chatSendBtn.addEventListener('click', enviarMensaje);
-    }
-    if (chatInput) {
-        chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') enviarMensaje();
-        });
-    }
+    chatSendBtn?.addEventListener('click', enviarMensaje);
+    chatInput?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') enviarMensaje();
+    });
 }
 
 // 6. MENÚ MÓVIL Y ANIMACIONES SCROLL REVEAL
@@ -987,10 +741,7 @@ function inicializarMenuMovilYAnimaciones() {
     const navMenu = document.getElementById('nav-links-menu');
 
     if (toggleBtn && navMenu) {
-        toggleBtn.addEventListener('click', () => {
-            navMenu.classList.toggle('active');
-        });
-        
+        toggleBtn.addEventListener('click', () => navMenu.classList.toggle('active'));
         navMenu.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', () => navMenu.classList.remove('active'));
         });
@@ -998,18 +749,33 @@ function inicializarMenuMovilYAnimaciones() {
 
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
-            }
+            if (entry.isIntersecting) entry.target.classList.add('visible');
         });
     }, { threshold: 0.15 });
 
-    document.querySelectorAll('.section-container').forEach(sec => {
-        observer.observe(sec);
-    });
+    document.querySelectorAll('.section-container').forEach(sec => observer.observe(sec));
 }
 
 // 7. ACCESIBILIDAD INTEGRAL
+
+function leerAccStorage(clave) {
+    try { return localStorage.getItem(clave); } catch (e) { return null; }
+}
+
+function guardarAccStorage(clave, valor) {
+    try {
+        if (valor === null) localStorage.removeItem(clave);
+        else localStorage.setItem(clave, String(valor));
+    } catch (e) {}
+}
+
+function aplicarEscalaFuente() {
+    document.documentElement.style.fontSize = `${accTamanoPx}px`;
+    const label = document.getElementById('accTamanoLabel');
+    if (label) label.textContent = `${accTamanoPx}px`;
+    guardarAccStorage('veeduriaTamanoPx', accTamanoPx);
+    guardarAccStorage('veeduriaZoomTexto', zoomTextoActual);
+}
 
 function toggleAccMenu() {
     const panel = document.getElementById('accMenuPanel');
@@ -1019,37 +785,32 @@ function toggleAccMenu() {
     const oculto = panel.hasAttribute('hidden');
     if (oculto) {
         panel.removeAttribute('hidden');
-        if (btn) btn.setAttribute('aria-expanded', 'true');
-        actualizarEtiquetaPx();
+        btn?.setAttribute('aria-expanded', 'true');
+        aplicarEscalaFuente();
     } else {
         panel.setAttribute('hidden', '');
-        if (btn) btn.setAttribute('aria-expanded', 'false');
+        btn?.setAttribute('aria-expanded', 'false');
     }
 }
 
 function cambiarTabAccesibilidad(nombreTab) {
-    document.querySelectorAll('.acc-tab').forEach((tab) => {
+    document.querySelectorAll('.acc-tab').forEach(tab => {
         tab.classList.toggle('is-active', tab.dataset.accTab === nombreTab);
     });
-    document.querySelectorAll('.acc-tab-content').forEach((panel) => {
+    document.querySelectorAll('.acc-tab-content').forEach(panel => {
         panel.classList.toggle('is-active', panel.dataset.accPanel === nombreTab);
     });
 }
 
 function actualizarEtiquetaPx() {
     const label = document.getElementById('accTamanoLabel');
-    if (label) {
-        label.textContent = `${accTamanoPx}px`;
-    }
+    if (label) label.textContent = `${accTamanoPx}px`;
 }
 
 function ajustarTamanoPx(deltaPx) {
     accTamanoPx = Math.min(26, Math.max(12, accTamanoPx + deltaPx));
-    document.documentElement.style.fontSize = `${accTamanoPx}px`;
-    actualizarEtiquetaPx();
-    try {
-        localStorage.setItem('veeduriaTamanoPx', accTamanoPx);
-    } catch (e) {}
+    zoomTextoActual = Math.round((accTamanoPx * 100) / 16);
+    aplicarEscalaFuente();
 }
 
 function toggleAltoContraste(activado) {
@@ -1065,7 +826,7 @@ function restablecerAccesibilidad() {
     document.body.classList.remove('acc-lectura-facil', 'acc-resaltar-enlaces');
     document.documentElement.classList.remove('acc-lectura-facil', 'acc-resaltar-enlaces');
 
-    ['switchLecturaFacil', 'switchResaltarEnlaces', 'switchAltoContraste'].forEach((id) => {
+    ['switchLecturaFacil', 'switchResaltarEnlaces', 'switchAltoContraste'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.checked = false;
     });
@@ -1073,18 +834,13 @@ function restablecerAccesibilidad() {
     setModoAccesibilidad('normal');
     detenerLectura();
 
-    try {
-        localStorage.removeItem('veeduriaTamanoPx');
-        localStorage.removeItem('veeduriaZoomTexto');
-        localStorage.removeItem('veeduria_acc-lectura-facil');
-        localStorage.removeItem('veeduria_acc-resaltar-enlaces');
-    } catch (e) {}
+    ['veeduriaTamanoPx', 'veeduriaZoomTexto', 'veeduria_acc-lectura-facil', 'veeduria_acc-resaltar-enlaces']
+        .forEach(k => guardarAccStorage(k, null));
 }
 
 function leerPaginaEnVozAlta() {
     if (!('speechSynthesis' in window)) {
-        alert('Tu navegador no soporta lectura en voz alta.');
-        return;
+        return alert('Tu navegador no soporta lectura en voz alta.');
     }
     window.speechSynthesis.cancel();
 
@@ -1093,17 +849,14 @@ function leerPaginaEnVozAlta() {
         .map(id => document.getElementById(id)?.innerText || '')
         .join('. ');
 
-    const textoALeer = textoSeleccionado || secciones;
-    const mensaje = new SpeechSynthesisUtterance(textoALeer);
+    const mensaje = new SpeechSynthesisUtterance(textoSeleccionado || secciones);
     mensaje.lang = 'es-CO';
     mensaje.rate = 0.95;
     window.speechSynthesis.speak(mensaje);
 }
 
 function detenerLectura() {
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-    }
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 }
 
 function cambiarTamanoTexto(cambio) {
@@ -1111,57 +864,36 @@ function cambiarTamanoTexto(cambio) {
         zoomTextoActual = 100;
         accTamanoPx = 16;
         document.documentElement.style.fontSize = '';
-    } else {
-        zoomTextoActual = Math.min(140, Math.max(80, zoomTextoActual + cambio));
-        accTamanoPx = Math.round((16 * zoomTextoActual) / 100);
-        document.documentElement.style.fontSize = zoomTextoActual + '%';
+        actualizarEtiquetaPx();
+        guardarAccStorage('veeduriaTamanoPx', null);
+        guardarAccStorage('veeduriaZoomTexto', null);
+        return;
     }
-    actualizarEtiquetaPx();
-    try {
-        localStorage.setItem('veeduriaZoomTexto', zoomTextoActual);
-        localStorage.setItem('veeduriaTamanoPx', accTamanoPx);
-    } catch (e) {}
+    zoomTextoActual = Math.min(140, Math.max(80, zoomTextoActual + cambio));
+    accTamanoPx = Math.round((16 * zoomTextoActual) / 100);
+    aplicarEscalaFuente();
 }
 
 function toggleOpcionExtra(claseCss, idBoton, forzarEstado = null) {
     const control = document.getElementById(idBoton);
-    let activo;
-
-    if (typeof forzarEstado === 'boolean') {
-        activo = forzarEstado;
-    } else if (control && control.type === 'checkbox') {
-        activo = control.checked;
-    } else {
-        activo = !document.body.classList.contains(claseCss);
-    }
+    const activo = typeof forzarEstado === 'boolean'
+        ? forzarEstado
+        : (control && control.type === 'checkbox' ? control.checked : !document.body.classList.contains(claseCss));
 
     document.body.classList.toggle(claseCss, activo);
     document.documentElement.classList.toggle(claseCss, activo);
 
-    if (control && control.type === 'checkbox') {
-        control.checked = activo;
-    } else if (control) {
-        control.classList.toggle('activo', activo);
-    }
+    if (control && control.type === 'checkbox') control.checked = activo;
+    else control?.classList.toggle('activo', activo);
 
-    try {
-        localStorage.setItem('veeduria_' + claseCss, activo ? '1' : '0');
-    } catch (e) {}
+    guardarAccStorage('veeduria_' + claseCss, activo ? '1' : '0');
 }
 
 function setModoAccesibilidad(modo) {
     const modoValido = modo || 'normal';
     const root = document.documentElement;
-    root.classList.remove(
-        'acc-deuteranopia',
-        'acc-protanopia',
-        'acc-tritanopia',
-        'acc-contraste'
-    );
-
-    if (modoValido !== 'normal') {
-        root.classList.add('acc-' + modoValido);
-    }
+    root.classList.remove('acc-deuteranopia', 'acc-protanopia', 'acc-tritanopia', 'acc-contraste');
+    if (modoValido !== 'normal') root.classList.add('acc-' + modoValido);
 
     const selector = document.querySelector('#accMenuPanel .acc-select, #accModoColorSelect');
     if (selector) selector.value = modoValido;
@@ -1169,9 +901,7 @@ function setModoAccesibilidad(modo) {
     const switchContraste = document.getElementById('switchAltoContraste');
     if (switchContraste) switchContraste.checked = modoValido === 'contraste';
 
-    try {
-        localStorage.setItem('modoAccesibilidadVeeduria', modoValido);
-    } catch (e) {}
+    guardarAccStorage('modoAccesibilidadVeeduria', modoValido);
 }
 
 function inicializarAccesibilidad() {
@@ -1181,35 +911,30 @@ function inicializarAccesibilidad() {
         const btn = document.getElementById('btnAccMenu');
         if (toolbar && panel && !panel.hasAttribute('hidden') && !toolbar.contains(e.target)) {
             panel.setAttribute('hidden', '');
-            if (btn) btn.setAttribute('aria-expanded', 'false');
+            btn?.setAttribute('aria-expanded', 'false');
         }
     });
 
-    try {
-        const modo = localStorage.getItem('modoAccesibilidadVeeduria') || 'normal';
-        setModoAccesibilidad(modo);
+    setModoAccesibilidad(leerAccStorage('modoAccesibilidadVeeduria') || 'normal');
 
-        const pxGuardado = parseInt(localStorage.getItem('veeduriaTamanoPx'), 10);
-        if (pxGuardado && pxGuardado >= 12 && pxGuardado <= 26) {
-            accTamanoPx = pxGuardado;
-            document.documentElement.style.fontSize = `${accTamanoPx}px`;
-        } else {
-            const zoom = parseInt(localStorage.getItem('veeduriaZoomTexto'), 10);
-            if (zoom && zoom >= 80 && zoom <= 140) {
-                zoomTextoActual = zoom;
-                accTamanoPx = Math.round((16 * zoomTextoActual) / 100);
-                document.documentElement.style.fontSize = zoomTextoActual + '%';
-            }
-        }
-        actualizarEtiquetaPx();
+    const pxGuardado = parseInt(leerAccStorage('veeduriaTamanoPx'), 10);
+    const zoomGuardado = parseInt(leerAccStorage('veeduriaZoomTexto'), 10);
+    if (pxGuardado >= 12 && pxGuardado <= 26) {
+        accTamanoPx = pxGuardado;
+        document.documentElement.style.fontSize = `${accTamanoPx}px`;
+    } else if (zoomGuardado >= 80 && zoomGuardado <= 140) {
+        zoomTextoActual = zoomGuardado;
+        accTamanoPx = Math.round((16 * zoomTextoActual) / 100);
+        document.documentElement.style.fontSize = zoomTextoActual + '%';
+    }
+    actualizarEtiquetaPx();
 
-        if (localStorage.getItem('veeduria_acc-lectura-facil') === '1') {
-            toggleOpcionExtra('acc-lectura-facil', 'switchLecturaFacil', true);
-        }
-        if (localStorage.getItem('veeduria_acc-resaltar-enlaces') === '1') {
-            toggleOpcionExtra('acc-resaltar-enlaces', 'switchResaltarEnlaces', true);
-        }
-    } catch (e) {}
+    if (leerAccStorage('veeduria_acc-lectura-facil') === '1') {
+        toggleOpcionExtra('acc-lectura-facil', 'switchLecturaFacil', true);
+    }
+    if (leerAccStorage('veeduria_acc-resaltar-enlaces') === '1') {
+        toggleOpcionExtra('acc-resaltar-enlaces', 'switchResaltarEnlaces', true);
+    }
 }
 
 // 8. GALERÍA INTERACTIVA DE SAN PELAYO
@@ -1219,7 +944,6 @@ const FOTOS_GALERIA_SAN_PELAYO = [
         id: 'puente-sinu',
         titulo: 'Puente Metálico sobre el Río Sinú',
         categoria: 'infraestructura',
-        etiqueta: 'Infraestructura y Río',
         imagen: '/galeria/puente-sinu.jpg',
         descripcion: 'Ícono de conectividad y movilidad que enlaza a San Pelayo con el resto de Córdoba.'
     },
@@ -1227,7 +951,6 @@ const FOTOS_GALERIA_SAN_PELAYO = [
         id: 'planchon-sinu',
         titulo: 'Cruce Fluvial en el Río Sinú',
         categoria: 'infraestructura',
-        etiqueta: 'Infraestructura y Río',
         imagen: '/galeria/planchon-sinu.jpg',
         descripcion: 'Transporte tradicional sobre el río Sinú que acompaña la vida cotidiana y productiva ribereña.'
     },
@@ -1235,7 +958,6 @@ const FOTOS_GALERIA_SAN_PELAYO = [
         id: 'monumento-porro',
         titulo: 'Monumento a los Instrumentos del Porro',
         categoria: 'cultura',
-        etiqueta: 'Cultura y Porro',
         imagen: '/galeria/monumento-porro.jpg',
         descripcion: 'Homenaje a las bandas y ritmos tradicionales que hacen de San Pelayo cuna del porro.'
     },
@@ -1243,7 +965,6 @@ const FOTOS_GALERIA_SAN_PELAYO = [
         id: 'danza-porro',
         titulo: 'Danza y Tradición Folclórica',
         categoria: 'cultura',
-        etiqueta: 'Cultura y Porro',
         imagen: '/galeria/danza-porro.jpg',
         descripcion: 'Expresión cultural con trajes coloridos y percusión que mantiene viva la identidad local.'
     },
@@ -1251,7 +972,6 @@ const FOTOS_GALERIA_SAN_PELAYO = [
         id: 'plaza-sombreros',
         titulo: 'Plaza y Monumentos con Sombrero Vueltiao',
         categoria: 'espacio',
-        etiqueta: 'Espacio Público',
         imagen: '/galeria/plaza-sombreros.jpg',
         descripcion: 'Entorno urbano central donde confluyen símbolos artesanales, música y encuentro ciudadano.'
     },
@@ -1259,7 +979,6 @@ const FOTOS_GALERIA_SAN_PELAYO = [
         id: 'fuente-monumento',
         titulo: 'Fuente y Monumento Tradicional',
         categoria: 'espacio',
-        etiqueta: 'Espacio Público',
         imagen: '/galeria/fuente-monumento.jpg',
         descripcion: 'Espacio comunitario y memoria local dentro del recorrido urbano de San Pelayo.'
     }
@@ -1287,10 +1006,7 @@ function inicializarGaleria() {
         modal.removeAttribute('hidden');
     }
 
-    function cerrarFotoModal() {
-        if (!modal) return;
-        modal.setAttribute('hidden', '');
-    }
+    const cerrarFotoModal = () => modal?.setAttribute('hidden', '');
 
     function renderizarTarjetas(categoria = 'todas') {
         const filtradas = categoria === 'todas'
@@ -1305,7 +1021,6 @@ function inicializarGaleria() {
             card.tabIndex = 0;
             card.setAttribute('role', 'button');
             card.setAttribute('aria-label', `Ver ${foto.titulo}`);
-
             card.innerHTML = `
                 <img src="${foto.imagen}" alt="${foto.titulo}" loading="lazy">
                 <div class="galeria-card-body">
@@ -1322,11 +1037,8 @@ function inicializarGaleria() {
             card.addEventListener('click', () => {
                 const yaActiva = card.classList.contains('activa');
                 grid.querySelectorAll('.galeria-card').forEach(c => c.classList.remove('activa'));
-                if (!yaActiva) {
-                    card.classList.add('activa');
-                } else {
-                    abrirFotoModal(foto);
-                }
+                if (!yaActiva) card.classList.add('activa');
+                else abrirFotoModal(foto);
             });
 
             card.addEventListener('keydown', (e) => {
@@ -1348,20 +1060,12 @@ function inicializarGaleria() {
         });
     });
 
-    if (cerrarModal) {
-        cerrarModal.addEventListener('click', cerrarFotoModal);
-    }
-
-    if (modal) {
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) cerrarFotoModal();
-        });
-    }
-
+    cerrarModal?.addEventListener('click', cerrarFotoModal);
+    modal?.addEventListener('click', (e) => {
+        if (e.target === modal) cerrarFotoModal();
+    });
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modal && !modal.hasAttribute('hidden')) {
-            cerrarFotoModal();
-        }
+        if (e.key === 'Escape' && modal && !modal.hasAttribute('hidden')) cerrarFotoModal();
     });
 
     renderizarTarjetas('todas');
@@ -1374,7 +1078,6 @@ async function iniciarRotacionHero(intervaloMs = 7000) {
     if (!hero) return;
 
     let listaHero = [];
-
     try {
         const resp = await fetch('/api/hero-imagenes');
         if (resp.ok) {
@@ -1397,7 +1100,6 @@ async function iniciarRotacionHero(intervaloMs = 7000) {
     }
 
     let indice = 0;
-
     const aplicarFondo = (ruta) => {
         hero.style.backgroundImage = `linear-gradient(rgba(15, 23, 42, 0.55), rgba(15, 23, 42, 0.55)), url("${ruta}")`;
         hero.style.backgroundSize = 'cover';
@@ -1406,7 +1108,7 @@ async function iniciarRotacionHero(intervaloMs = 7000) {
     };
 
     aplicarFondo(listaHero[indice]);
-
+    
     if (listaHero.length > 1) {
         setInterval(() => {
             indice = (indice + 1) % listaHero.length;
