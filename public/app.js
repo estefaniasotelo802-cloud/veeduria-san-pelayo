@@ -729,7 +729,7 @@ function formatearFichaObraChatbot(obra) {
     const fechaFin = obra.fecha_fin ? new Date(obra.fecha_fin).toLocaleDateString() : 'N/D';
 
     return [
-        `Aquí tienes el chisme oficial de "${obra.nombre || 'Obra sin nombre'}":`,
+        `Información de "${obra.nombre || 'Obra sin nombre'}":`,
         `• Sector: ${obra.sector || 'No especificado'}`,
         `• Presupuesto: $${presupuesto}`,
         `• Estado: ${obra.estado || 'Pendiente'}`,
@@ -738,25 +738,47 @@ function formatearFichaObraChatbot(obra) {
     ].join('\n');
 }
 
-function formatearListadoObrasChatbot(obras) {
+function construirMensajeListadoObras(obras, agregarMensajeFn) {
     if (!Array.isArray(obras) || obras.length === 0) {
-        return 'Por ahora no hay obras registradas en el radar. ¡Qué tranquilidad o qué misterio!';
+        agregarMensajeFn('Actualmente no hay obras registradas en el sistema.', 'bot-message');
+        return;
     }
 
-    const lineas = obras.map((obra, idx) => {
+    const intro = document.createElement('div');
+    intro.className = 'message bot-message';
+    intro.style.whiteSpace = 'pre-line';
+    intro.textContent = 'Estas son las obras registradas actualmente. Haz clic en cualquiera para ver su información completa:';
+
+    const lista = document.createElement('div');
+    lista.className = 'chat-lista-obras';
+
+    obras.forEach((obra, idx) => {
         const punto = obtenerCirculitoObra(obra, idx);
         const nombre = obra.nombre || 'Obra sin nombre';
         const estado = obra.estado || 'Sin estado';
-        return `${idx + 1}. ${punto} ${nombre} (${estado})`;
+
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'chat-obra-item';
+        item.innerHTML = `<span class="chat-obra-circulo">${punto}</span><span><strong>${escaparHTML(nombre)}</strong> (${escaparHTML(estado)})</span>`;
+
+        item.addEventListener('click', () => {
+            agregarMensajeFn(nombre, 'user-message');
+            setTimeout(() => {
+                agregarMensajeFn(formatearFichaObraChatbot(obra), 'bot-message');
+            }, 250);
+        });
+
+        lista.appendChild(item);
     });
 
-    return [
-        '¡Claro que sí! Aquí van las obras registradas hasta ahora, sin enredos:',
-        '',
-        ...lineas,
-        '',
-        'Si quieres saber más de alguna, dime cuál te llama la atención.'
-    ].join('\n');
+    intro.appendChild(lista);
+
+    const chatMessages = document.getElementById('chat-messages');
+    if (chatMessages) {
+        chatMessages.appendChild(intro);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
 }
 
 function responderChatbot(texto, obrasDisponibles = []) {
@@ -764,11 +786,17 @@ function responderChatbot(texto, obrasDisponibles = []) {
     const lower = raw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
     if (/(hola|buenos dias|buenas tardes|buenas noches|saludos)/.test(lower)) {
-        return '¡Hola! Aquí el asistente de San Pelayo reportándose al servicio. ¿Qué andamos averiguando hoy?';
+        return {
+            tipo: 'texto',
+            contenido: '¡Hola! Soy el asistente de la Veeduría de San Pelayo. ¿En qué te puedo ayudar hoy?'
+        };
     }
 
     if (/(gracias|muy amable|excelente|perfecto)/.test(lower)) {
-        return '¡A la orden! Si necesitas revisar otro proyecto o chismosear avances, aquí sigo firme.';
+        return {
+            tipo: 'texto',
+            contenido: 'Con mucho gusto. Si deseas consultar otra obra o información del municipio, aquí estoy disponible.'
+        };
     }
 
     const preguntaPorListado =
@@ -776,7 +804,7 @@ function responderChatbot(texto, obrasDisponibles = []) {
         /^obras\??$/.test(lower);
 
     if (preguntaPorListado) {
-        return formatearListadoObrasChatbot(obrasDisponibles);
+        return { tipo: 'listado' };
     }
 
     const coincidencia = obrasDisponibles.find((obra) => {
@@ -788,20 +816,35 @@ function responderChatbot(texto, obrasDisponibles = []) {
     });
 
     if (coincidencia) {
-        return formatearFichaObraChatbot(coincidencia);
+        return {
+            tipo: 'texto',
+            contenido: formatearFichaObraChatbot(coincidencia)
+        };
     }
 
     if (/(gas|pelayito|brisas)/.test(lower)) {
-        return 'La obra de Expansión de Gas Domiciliario en Pelayito y Brisas del Sinú tiene un presupuesto de $92,800,000 y un avance del 95% (En pruebas técnicas). Ya casi huele a estufa encendida.';
+        return {
+            tipo: 'texto',
+            contenido: 'La obra de Expansión de Gas Domiciliario en Pelayito y Brisas del Sinú tiene un presupuesto de $92,800,000 y un avance del 95% (En pruebas técnicas).'
+        };
     }
     if (/(puente|sabana|canuelar|cañuelar)/.test(lower)) {
-        return 'La Reconstrucción y Mitigación del Puente Cañuelar en Sabana Nueva cuenta con un presupuesto de $87,000,000,000 y se encuentra finalizada (100%). Paso habilitado y sin rodeos.';
+        return {
+            tipo: 'texto',
+            contenido: 'La Reconstrucción y Mitigación del Puente Cañuelar en Sabana Nueva cuenta con un presupuesto de $87,000,000,000 y se encuentra finalizada (100%).'
+        };
     }
     if (/(pavimentacion|pavimentación|guamas|carrillo|vial)/.test(lower)) {
-        return 'La Pavimentación del Corredor Vial Carrillo - Las Guamas tiene un presupuesto de $10,000,000,000 y presenta un 50% de avance en ejecución. Va por la mitad del camino.';
+        return {
+            tipo: 'texto',
+            contenido: 'La Pavimentación del Corredor Vial Carrillo - Las Guamas tiene un presupuesto de $10,000,000,000 y presenta un 50% de avance en ejecución.'
+        };
     }
 
-    return 'No me quedó muy claro qué buscas, pero si quieres ver las obras registradas pregúntame "¿cuáles son las obras?" o dime el nombre de alguna.';
+    return {
+        tipo: 'texto',
+        contenido: 'No identifiqué una obra exacta con ese mensaje. Puedes preguntar "¿cuáles son las obras?" para ver el listado o indicar el nombre del proyecto.'
+    };
 }
 
 function inicializarChatbot() {
@@ -826,7 +869,12 @@ function inicializarChatbot() {
     async function procesarRespuestaBot(textoUsuario) {
         const obras = await obtenerObrasParaChatbot();
         const respuesta = responderChatbot(textoUsuario, obras);
-        agregarMensaje(respuesta, 'bot-message');
+
+        if (respuesta.tipo === 'listado') {
+            construirMensajeListadoObras(obras, agregarMensaje);
+        } else {
+            agregarMensaje(respuesta.contenido, 'bot-message');
+        }
     }
 
     chatBox.style.display = 'none';

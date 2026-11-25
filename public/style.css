@@ -1879,3 +1879,39 @@ html.acc-contraste { filter: contrast(1.35) saturate(1.1); }
     color: #ffffff;
     transform: translateX(2px);
 }
+
+.chat-lista-obras {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.chat-obra-item {
+    width: auto !important;
+    padding: 4px 6px !important;
+    background: transparent !important;
+    color: #1e293b !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 6px !important;
+    font-size: 0.84rem !important;
+    font-weight: 400 !important;
+    text-align: left !important;
+    display: flex !important;
+    align-items: flex-start;
+    gap: 6px;
+    line-height: 1.35;
+}
+
+.chat-obra-item:hover {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    text-decoration: underline;
+}
+
+.chat-obra-circulo {
+    font-size: 0.72rem;
+    line-height: 1.45;
+    flex-shrink: 0;
+}
