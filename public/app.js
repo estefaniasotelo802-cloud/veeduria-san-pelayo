@@ -184,7 +184,15 @@ async function cargarMarcadoresEnMapa(map) {
     }
 }
 
-// 3. BUZÓN CIUDADANO: FILTRO, REACCIONES, RESPUESTAS, ELIMINAR PROPIO Y REPORTES
+// 3. BUZÓN CIUDADANO: FILTRO, REACCIONES LIBRES, RESPUESTAS, ELIMINAR PROPIO Y REPORTES
+
+const EMOJIS_RAPIDOS = ['👍', '❤️', '👏', '😮', '😢', '🔥', '🙌'];
+const CATALOGO_EMOJIS_LIBRE = [
+    '👍', '👎', '❤️', '🧡', '💛', '💚', '💙', '💜', '👏', '🙌',
+    '🤝', '👌', '✌️', '🙏', '💪', '🔥', '⭐', '🎉', '🎊', '✅',
+    '😊', '😄', '😂', '🤣', '😍', '🥰', '😎', '🤩', '🤗', '🤔',
+    '😮', '😲', '😯', '😢', '😭', '😡', '🤬', '😕', '😟', '😴'
+];
 
 function inyectarEstilosComentariosInteractivos() {
     if (document.getElementById('estilos-comentarios-interactivos')) return;
@@ -231,6 +239,12 @@ function inyectarEstilosComentariosInteractivos() {
             cursor: default;
             text-decoration: none;
         }
+        .btn-flecha-reaccion {
+            font-size: 0.9rem !important;
+            line-height: 1 !important;
+            padding: 0 3px !important;
+            text-decoration: none !important;
+        }
         .btn-texto-eliminar {
             color: #dc2626 !important;
         }
@@ -242,6 +256,7 @@ function inyectarEstilosComentariosInteractivos() {
             display: inline-flex;
             align-items: center;
             gap: 5px;
+            flex-wrap: wrap;
         }
         .reaccion-picker-popover {
             position: absolute;
@@ -249,31 +264,54 @@ function inyectarEstilosComentariosInteractivos() {
             left: 0;
             background: #ffffff;
             border: 1px solid #e2e8f0;
-            border-radius: 999px;
-            padding: 3px 7px;
+            border-radius: 14px;
+            padding: 6px 8px;
             display: none;
-            align-items: center;
-            gap: 2px;
-            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+            flex-direction: column;
+            gap: 6px;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.14);
             z-index: 30;
+            min-width: 196px;
         }
         .reaccion-picker-popover.abierto {
-            display: inline-flex;
+            display: flex;
+        }
+        .fila-emojis-rapidos {
+            display: flex;
+            align-items: center;
+            gap: 2px;
         }
         .btn-emoji-opcion {
             width: auto !important;
             padding: 2px 5px !important;
-            font-size: 0.95rem !important;
+            font-size: 0.98rem !important;
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
-            border-radius: 50% !important;
+            border-radius: 6px !important;
             cursor: pointer;
-            transition: transform 0.12s ease;
+            transition: transform 0.12s ease, background 0.12s ease;
         }
         .btn-emoji-opcion:hover {
-            transform: scale(1.2);
+            transform: scale(1.18);
             background: #f1f5f9 !important;
+        }
+        .btn-mas-emojis {
+            font-weight: 700 !important;
+            color: #0284c7 !important;
+            padding: 2px 7px !important;
+        }
+        .grid-emojis-amplio {
+            display: none;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 2px;
+            max-height: 120px;
+            overflow-y: auto;
+            padding-top: 6px;
+            border-top: 1px solid #f1f5f9;
+        }
+        .grid-emojis-amplio.visible {
+            display: grid;
         }
         .badge-reaccion-activa {
             width: auto !important;
@@ -468,7 +506,7 @@ function obtenerIniciales(nombre) {
 
 async function reaccionarComentario(comentarioId, emoji) {
     try {
-        await fetch(`/obras/comentarios/${encodeURIComponent(comentarioId)}/reaccionar`, {
+        const resp = await fetch(`/obras/comentarios/${encodeURIComponent(comentarioId)}/reaccionar`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -476,6 +514,11 @@ async function reaccionarComentario(comentarioId, emoji) {
                 deviceId: obtenerDeviceId()
             })
         });
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            if (err.error) alert(err.error);
+            return;
+        }
         await cargarComentariosPublicos();
     } catch (e) {
         console.error('Error al reaccionar:', e);
@@ -548,18 +591,21 @@ function construirBarraAcciones(c, clave, reportesLocales, tokensPropios, permit
     const esMio = Boolean(c.id && tokensPropios[String(c.id)]);
     const reaccionesObj = c.reacciones || {};
     const miReaccion = c.mi_reaccion || null;
-    const emojisDisponibles = ['👍', '❤️', '👏', '😮', '😢'];
 
     const badgesHTML = Object.entries(reaccionesObj)
         .filter(([, count]) => Number(count) > 0)
         .map(([emoji, count]) => `
-            <button type="button" class="badge-reaccion-activa ${miReaccion === emoji ? 'mia' : ''}" data-emoji="${emoji}">
-                <span>${emoji}</span><span>${count}</span>
+            <button type="button" class="badge-reaccion-activa ${miReaccion === emoji ? 'mia' : ''}" data-emoji="${escaparHTML(emoji)}">
+                <span>${escaparHTML(emoji)}</span><span>${count}</span>
             </button>
         `)
         .join('');
 
-    const pickerHTML = emojisDisponibles
+    const rapidosHTML = EMOJIS_RAPIDOS
+        .map((em) => `<button type="button" class="btn-emoji-opcion" data-emoji="${em}">${em}</button>`)
+        .join('');
+
+    const catalogoHTML = CATALOGO_EMOJIS_LIBRE
         .map((em) => `<button type="button" class="btn-emoji-opcion" data-emoji="${em}">${em}</button>`)
         .join('');
 
@@ -568,10 +614,14 @@ function construirBarraAcciones(c, clave, reportesLocales, tokensPropios, permit
     barra.innerHTML = `
         <div class="comentario-acciones-izq">
             <div class="reaccion-wrapper">
-                <button type="button" class="btn-texto-limpio btn-toggle-reacciones" title="Reaccionar">
-                    <span>${miReaccion || '😊'}</span><span style="font-size: 0.65rem;">▾</span>
-                </button>
-                <div class="reaccion-picker-popover">${pickerHTML}</div>
+                <button type="button" class="btn-texto-limpio btn-flecha-reaccion btn-toggle-reacciones" title="Elegir reacción" aria-label="Elegir reacción">▾</button>
+                <div class="reaccion-picker-popover">
+                    <div class="fila-emojis-rapidos">
+                        ${rapidosHTML}
+                        <button type="button" class="btn-emoji-opcion btn-mas-emojis" title="Más emojis">+</button>
+                    </div>
+                    <div class="grid-emojis-amplio">${catalogoHTML}</div>
+                </div>
                 ${badgesHTML}
             </div>
             ${permitirResponder ? `<button type="button" class="btn-texto-limpio btn-abrir-respuesta">Responder</button>` : ''}
@@ -584,9 +634,11 @@ function construirBarraAcciones(c, clave, reportesLocales, tokensPropios, permit
         </div>
     `;
 
-    
     const btnToggleReac = barra.querySelector('.btn-toggle-reacciones');
     const popover = barra.querySelector('.reaccion-picker-popover');
+    const btnMas = barra.querySelector('.btn-mas-emojis');
+    const gridAmplio = barra.querySelector('.grid-emojis-amplio');
+
     if (btnToggleReac && popover && c.id) {
         btnToggleReac.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -596,10 +648,18 @@ function construirBarraAcciones(c, clave, reportesLocales, tokensPropios, permit
             popover.classList.toggle('abierto');
         });
 
-        popover.querySelectorAll('.btn-emoji-opcion').forEach((btnEm) => {
+        if (btnMas && gridAmplio) {
+            btnMas.addEventListener('click', (e) => {
+                e.stopPropagation();
+                gridAmplio.classList.toggle('visible');
+            });
+        }
+
+        popover.querySelectorAll('.btn-emoji-opcion[data-emoji]').forEach((btnEm) => {
             btnEm.addEventListener('click', (e) => {
                 e.stopPropagation();
                 popover.classList.remove('abierto');
+                if (gridAmplio) gridAmplio.classList.remove('visible');
                 reaccionarComentario(c.id, btnEm.dataset.emoji);
             });
         });
@@ -612,12 +672,10 @@ function construirBarraAcciones(c, clave, reportesLocales, tokensPropios, permit
         });
     }
 
-
     const btnEliminar = barra.querySelector('.btn-eliminar-propio');
     if (btnEliminar && c.id) {
         btnEliminar.addEventListener('click', () => eliminarComentarioPropio(c.id));
     }
-
 
     const btnReportar = barra.querySelector('.btn-reportar-comentario');
     if (btnReportar && !yaReportado) {
