@@ -1915,3 +1915,24 @@ html.acc-contraste { filter: contrast(1.35) saturate(1.1); }
     line-height: 1.45;
     flex-shrink: 0;
 }
+
+.btn-ver-mas-obras {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 14px auto 4px;
+    padding: 8px 16px;
+    background-color: #f8fafc;
+    color: #0f172a;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-ver-mas-obras:hover {
+    background-color: #e2e8f0;
+    border-color: #94a3b8;
+}

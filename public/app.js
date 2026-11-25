@@ -10,13 +10,34 @@ document.addEventListener('DOMContentLoaded', () => {
     iniciarRotacionHero();
 });
 
-// Variables globales para sincronizar tabla y mapa
+// Variables globales para sincronizar tabla, mapa, buzón y accesibilidad
 let mapaGlobal = null;
 const marcadoresObras = {};
 let zoomTextoActual = 100;
 let accTamanoPx = 16;
 let limiteComentariosVisibles = 5;
 let ultimoComentarioEnviado = { texto: '', timestamp: 0 };
+
+let mostrarTodasObras = false;
+let obrasPublicasCache = [];
+const LIMITE_INICIAL_OBRAS = 4;
+
+const COORDENADAS_SECTORES_MAPA = {
+    'san pelayo': [8.9564, -75.8369],
+    'centro': [8.9564, -75.8369],
+    'pelayito': [8.9465, -75.8240],
+    'brisas del sinu': [8.9635, -75.8430],
+    'brisas del sinú': [8.9635, -75.8430],
+    'sabana nueva': [8.9780, -75.8175],
+    'carrillo': [8.9410, -75.8360],
+    'las guamas': [8.9320, -75.8190],
+    'bonga mella': [8.9850, -75.8520],
+    'el oco': [8.9280, -75.8450],
+    'trementino': [8.9180, -75.8280],
+    'valparaiso': [8.9690, -75.8540],
+    'valparaíso': [8.9690, -75.8540],
+    'cotorra': [9.0350, -75.7950]
+};
 
 function escaparHTML(texto) {
     return String(texto || '')
@@ -32,7 +53,104 @@ function obtenerAvanceObra(obra) {
     return val === '' ? 0 : val;
 }
 
+function resolverCoordenadasObra(obra) {
+    const latNum = parseFloat(obra.latitud);
+    const lngNum = parseFloat(obra.longitud);
+    const esPuntoPorDefecto =
+        Number.isNaN(latNum) ||
+        Number.isNaN(lngNum) ||
+        (Math.abs(latNum - 8.9564) < 0.0001 && Math.abs(lngNum + 75.8369) < 0.0001);
+
+    if (!esPuntoPorDefecto) {
+        return { lat: latNum, lng: lngNum };
+    }
+
+    const sectorNorm = String(obra.sector || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+
+    for (const [clave, coords] of Object.entries(COORDENADAS_SECTORES_MAPA)) {
+        const claveNorm = clave.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (sectorNorm === claveNorm || sectorNorm.includes(claveNorm)) {
+            return { lat: coords[0], lng: coords[1] };
+        }
+    }
+
+    return {
+        lat: Number.isNaN(latNum) ? 8.9564 : latNum,
+        lng: Number.isNaN(lngNum) ? -75.8369 : lngNum
+    };
+}
+
 // 1. GESTIÓN DE LA TABLA PÚBLICA
+
+function renderizarTablaObras(obras) {
+    const tablaBody = document.getElementById('tablaObrasBody');
+    if (!tablaBody) return;
+
+    tablaBody.innerHTML = '';
+
+    if (!Array.isArray(obras) || obras.length === 0) {
+        tablaBody.innerHTML = `<tr><td colspan="7" style="text-align: center;">No hay obras registradas actualmente.</td></tr>`;
+        return;
+    }
+
+    const obrasVisibles = mostrarTodasObras ? obras : obras.slice(0, LIMITE_INICIAL_OBRAS);
+
+    obrasVisibles.forEach(obra => {
+        const fila = document.createElement('tr');
+        fila.style.cursor = 'pointer';
+
+        const porcentajeNum = Math.max(0, Math.min(100, Number(obtenerAvanceObra(obra)) || 0));
+        const fechaInicio = obra.fecha_inicio ? new Date(obra.fecha_inicio).toLocaleDateString() : 'N/D';
+        const fechaFin = obra.fecha_fin ? new Date(obra.fecha_fin).toLocaleDateString() : 'N/D';
+
+        fila.innerHTML = `
+            <td>${escaparHTML(obra.nombre)}</td>
+            <td>${escaparHTML(obra.sector)}</td>
+            <td>$${Number(obra.presupuesto).toLocaleString()}</td>
+            <td><span class="badge ${obtenerClaseEstado(obra.estado)}">${escaparHTML(obra.estado)}</span></td>
+            <td>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="--progress-width: ${porcentajeNum}%; width: ${porcentajeNum}%;"></div>
+                    <span>${porcentajeNum}%</span>
+                </div>
+            </td>
+            <td style="color: #475569; font-size: 0.9rem;">${fechaInicio}</td>
+            <td style="color: #475569; font-size: 0.9rem;">${fechaFin}</td>
+        `;
+
+        fila.addEventListener('click', () => {
+            if (marcadoresObras[obra.id] && mapaGlobal) {
+                const marker = marcadoresObras[obra.id];
+                mapaGlobal.flyTo(marker.getLatLng(), 15, { animate: true, duration: 1.5 });
+                marker.openPopup();
+            }
+        });
+
+        tablaBody.appendChild(fila);
+    });
+
+    if (obras.length > LIMITE_INICIAL_OBRAS) {
+        const filaControl = document.createElement('tr');
+        filaControl.innerHTML = `
+            <td colspan="7" style="text-align: center; background: transparent; border: none; padding-top: 10px;">
+                <button type="button" id="btnToggleTodasObras" class="btn-ver-mas-obras">
+                    ${mostrarTodasObras ? 'Ver menos obras' : `Ver todas las obras (${obras.length})`}
+                </button>
+            </td>
+        `;
+        tablaBody.appendChild(filaControl);
+
+        document.getElementById('btnToggleTodasObras')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            mostrarTodasObras = !mostrarTodasObras;
+            renderizarTablaObras(obrasPublicasCache);
+        });
+    }
+}
 
 async function obtenerObrasPublicas() {
     try {
@@ -40,49 +158,8 @@ async function obtenerObrasPublicas() {
         if (!respuesta.ok) throw new Error('Error al conectar con el servidor para obtener las obras.');
 
         const obras = await respuesta.json();
-        const tablaBody = document.getElementById('tablaObrasBody');
-        if (!tablaBody) return;
-
-        tablaBody.innerHTML = '';
-
-        if (obras.length === 0) {
-            tablaBody.innerHTML = `<tr><td colspan="7" style="text-align: center;">No hay obras registradas actualmente.</td></tr>`;
-            return;
-        }
-
-        obras.forEach(obra => {
-            const fila = document.createElement('tr');
-            fila.style.cursor = 'pointer';
-
-            const porcentajeNum = Math.max(0, Math.min(100, Number(obtenerAvanceObra(obra)) || 0));
-            const fechaInicio = obra.fecha_inicio ? new Date(obra.fecha_inicio).toLocaleDateString() : 'N/D';
-            const fechaFin = obra.fecha_fin ? new Date(obra.fecha_fin).toLocaleDateString() : 'N/D';
-
-            fila.innerHTML = `
-                <td>${escaparHTML(obra.nombre)}</td>
-                <td>${escaparHTML(obra.sector)}</td>
-                <td>$${Number(obra.presupuesto).toLocaleString()}</td>
-                <td><span class="badge ${obtenerClaseEstado(obra.estado)}">${escaparHTML(obra.estado)}</span></td>
-                <td>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar" style="--progress-width: ${porcentajeNum}%; width: ${porcentajeNum}%;"></div>
-                        <span>${porcentajeNum}%</span>
-                    </div>
-                </td>
-                <td style="color: #475569; font-size: 0.9rem;">${fechaInicio}</td>
-                <td style="color: #475569; font-size: 0.9rem;">${fechaFin}</td>
-            `;
-
-            fila.addEventListener('click', () => {
-                if (marcadoresObras[obra.id] && mapaGlobal) {
-                    const marker = marcadoresObras[obra.id];
-                    mapaGlobal.flyTo(marker.getLatLng(), 15, { animate: true, duration: 1.5 });
-                    marker.openPopup();
-                }
-            });
-
-            tablaBody.appendChild(fila);
-        });
+        obrasPublicasCache = Array.isArray(obras) ? obras : [];
+        renderizarTablaObras(obrasPublicasCache);
     } catch (error) {
         console.error('Error:', error);
         const tablaBody = document.getElementById('tablaObrasBody');
@@ -130,10 +207,10 @@ async function cargarMarcadoresEnMapa(map) {
         Object.values(marcadoresObras).forEach(m => map.removeLayer(m));
 
         obras.forEach(obra => {
-            const lat = obra.latitud ? parseFloat(obra.latitud) : 8.9564;
-            const lng = obra.longitud ? parseFloat(obra.longitud) : -75.8369;
+            const { lat, lng } = resolverCoordenadasObra(obra);
             const porcentajeVal = obtenerAvanceObra(obra);
             const colorPin = obtenerColorPorEstado(obra.estado, porcentajeVal);
+            const razonObra = obra.razon || obra.justificacion || '';
 
             const iconoPinSvg = L.divIcon({
                 className: 'custom-pin',
@@ -150,12 +227,13 @@ async function cargarMarcadoresEnMapa(map) {
 
             const marker = L.marker([lat, lng], { icon: iconoPinSvg }).addTo(map);
             marker.bindPopup(`
-                <div style="font-family: Arial, sans-serif; min-width: 180px;">
+                <div style="font-family: Arial, sans-serif; min-width: 190px; max-width: 260px;">
                     <h4 style="margin: 0 0 5px 0; color: #2c3e50;">${escaparHTML(obra.nombre)}</h4>
                     <p style="margin: 3px 0;"><strong>Sector:</strong> ${escaparHTML(obra.sector)}</p>
                     <p style="margin: 3px 0;"><strong>Presupuesto:</strong> $${Number(obra.presupuesto).toLocaleString()}</p>
                     <p style="margin: 3px 0;"><strong>Estado:</strong> ${escaparHTML(obra.estado)}</p>
                     <p style="margin: 3px 0;"><strong>Avance:</strong> ${porcentajeVal}%</p>
+                    ${razonObra ? `<p style="margin: 6px 0 0 0; padding-top: 5px; border-top: 1px solid #e2e8f0; font-size: 0.85rem; color: #334155;"><strong>Razón / Justificación:</strong> ${escaparHTML(razonObra)}</p>` : ''}
                 </div>
             `);
             marcadoresObras[obra.id] = marker;
