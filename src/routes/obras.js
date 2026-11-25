@@ -164,14 +164,14 @@ router.post('/login', async (req, res) => {
     const [rows] = await pool.query('SELECT * FROM usuarios WHERE cedula = ?', [cedula]);
 
     if (rows.length === 0) {
-      return res.status(401).json({ mensaje: 'Usuario o contraseña incorrectos' });
+      return res.status(401).json({ mensaje: 'Usuario o contraseña incorrecta' });
     }
 
     const usuario = rows[0];
     const coincide = await bcrypt.compare(password, usuario.password);
 
     if (!coincide) {
-      return res.status(401).json({ mensaje: 'Usuario o contraseña incorrectos' });
+      return res.status(401).json({ mensaje: 'Usuario o contraseña incorrecta' });
     }
 
     if (usuario.rol !== 1) {
