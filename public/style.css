@@ -1854,3 +1854,28 @@ html.acc-contraste { filter: contrast(1.35) saturate(1.1); }
   border-color: #ffffff !important;
   color: #ffffff !important;
 }
+.chat-obras-opciones {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 4px 0 8px;
+}
+
+.chat-obra-btn {
+    text-align: left;
+    background-color: #f1f8f1;
+    color: #1b5e20;
+    border: 1px solid #508c46;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.chat-obra-btn:hover {
+    background-color: #508c46;
+    color: #ffffff;
+    transform: translateX(2px);
+}

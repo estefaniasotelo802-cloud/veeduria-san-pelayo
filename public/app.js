@@ -689,26 +689,97 @@ function inicializarFormularioComentarios() {
     });
 }
 
-// 5. CHATBOT
+// 5. CHATBOT CON OPCIONES INTERACTIVAS DE OBRAS
 
-function responderChatbot(texto) {
-    const lower = texto.toLowerCase();
-    if (/(hola|buenos dias|buenas tardes|saludos)/.test(lower)) {
-        return '¡Hola! Es un gusto saludarte. ¿Sobre cuál de las obras de San Pelayo te gustaría consultar hoy?';
+let obrasChatbotCache = [];
+
+async function obtenerObrasParaChatbot() {
+    if (Array.isArray(obrasChatbotCache) && obrasChatbotCache.length > 0) {
+        return obrasChatbotCache;
     }
+    try {
+        const resp = await fetch('/obras');
+        if (!resp.ok) return [];
+        const datos = await resp.json();
+        if (Array.isArray(datos)) {
+            obrasChatbotCache = datos;
+        }
+        return obrasChatbotCache;
+    } catch (error) {
+        console.warn('No se pudieron cargar las obras para el chatbot:', error);
+        return [];
+    }
+}
+
+function formatearFichaObraChatbot(obra) {
+    const avance = Math.max(0, Math.min(100, Number(obtenerAvanceObra(obra)) || 0));
+    const presupuesto = Number(obra.presupuesto || 0).toLocaleString();
+    const fechaInicio = obra.fecha_inicio ? new Date(obra.fecha_inicio).toLocaleDateString() : 'N/D';
+    const fechaFin = obra.fecha_fin ? new Date(obra.fecha_fin).toLocaleDateString() : 'N/D';
+
+    return [
+        `📌 ${obra.nombre || 'Obra sin nombre'}`,
+        `• Sector: ${obra.sector || 'No especificado'}`,
+        `• Presupuesto: $${presupuesto}`,
+        `• Estado: ${obra.estado || 'Pendiente'}`,
+        `• Avance: ${avance}%`,
+        `• Fechas: ${fechaInicio} al ${fechaFin}`
+    ].join('\n');
+}
+
+function responderChatbot(texto, obrasDisponibles = []) {
+    const lower = texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+    if (/(hola|buenos dias|buenas tardes|saludos|menu|obras|listar)/.test(lower)) {
+        return {
+            texto: '¡Hola! Selecciona una de las obras registradas para ver su información al instante:',
+            mostrarOpciones: true
+        };
+    }
+
     if (/(gracias|muy amable|excelente|perfecto)/.test(lower)) {
-        return 'Con gusto, fue un placer ayudarte. Si tienes alguna otra duda sobre las obras del municipio, aquí estaré.';
+        return {
+            texto: 'Con gusto. Si deseas consultar otra obra, aquí tienes la lista rápida:',
+            mostrarOpciones: true
+        };
     }
+
+    const coincidencia = obrasDisponibles.find((obra) => {
+        const nombreNorm = String(obra.nombre || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const sectorNorm = String(obra.sector || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return nombreNorm.includes(lower) || sectorNorm.includes(lower) || lower.split(/\s+/).some(p => p.length > 3 && nombreNorm.includes(p));
+    });
+
+    if (coincidencia) {
+        return {
+            texto: formatearFichaObraChatbot(coincidencia),
+            mostrarOpciones: true
+        };
+    }
+
     if (/(gas|pelayito|brisas)/.test(lower)) {
-        return 'La obra de Expansión de Gas Domiciliario en Pelayito y Brisas del Sinú tiene un presupuesto de $92,800,000 y un avance del 95% (En pruebas técnicas).';
+        return {
+            texto: 'La obra de Expansión de Gas Domiciliario en Pelayito y Brisas del Sinú tiene un presupuesto de $92,800,000 y un avance del 95% (En pruebas técnicas).',
+            mostrarOpciones: true
+        };
     }
-    if (/(puente|sabana|cañuelar)/.test(lower)) {
-        return 'La Reconstrucción y Mitigación del Puente Cañuelar en Sabana Nueva cuenta con un presupuesto de $87,000,000,000 y se encuentra finalizada (100%).';
+    if (/(puente|sabana|canuelar|cañuelar)/.test(lower)) {
+        return {
+            texto: 'La Reconstrucción y Mitigación del Puente Cañuelar en Sabana Nueva cuenta con un presupuesto de $87,000,000,000 y se encuentra finalizada (100%).',
+            mostrarOpciones: true
+        };
     }
-    if (/(pavimentación|guamas|carrillo|vial)/.test(lower)) {
-        return 'La Pavimentación del Corredor Vial Carrillo - Las Guamas tiene un presupuesto de $10,000,000,000 y presenta un 50% de avance en ejecución.';
+    if (/(pavimentacion|pavimentación|guamas|carrillo|vial)/.test(lower)) {
+        return {
+            texto: 'La Pavimentación del Corredor Vial Carrillo - Las Guamas tiene un presupuesto de $10,000,000,000 y presenta un 50% de avance en ejecución.',
+            mostrarOpciones: true
+        };
     }
-    return 'No logré identificar exactamente el proyecto del que hablas, pero puedes preguntarme libremente por el gas en Pelayito, el puente de Sabana Nueva o la vía a Las Guamas. ¿A cuál de ellas te refieres?';
+
+    return {
+        texto: 'No encontré una coincidencia exacta. Toca alguna obra de la lista para ver sus detalles:',
+        mostrarOpciones: true
+    };
 }
 
 function inicializarChatbot() {
@@ -719,30 +790,74 @@ function inicializarChatbot() {
     const chatInput = document.getElementById('chat-input');
     const chatMessages = document.getElementById('chat-messages');
 
-    if (!chatToggleBtn || !chatBox) return;
+    if (!chatToggleBtn || !chatBox || !chatMessages) return;
 
-    chatBox.style.display = 'none';
-    chatToggleBtn.addEventListener('click', () => {
-        chatBox.style.display = chatBox.style.display === 'none' ? 'flex' : 'none';
-    });
-    chatCloseBtn?.addEventListener('click', () => {
-        chatBox.style.display = 'none';
-    });
+    let bienvenidaMostrada = false;
 
     function agregarMensaje(texto, clase) {
         const msg = document.createElement('div');
         msg.className = `message ${clase}`;
+        msg.style.whiteSpace = 'pre-line';
         msg.textContent = texto;
         chatMessages.appendChild(msg);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
+
+    async function agregarBotonesObras() {
+        const obras = await obtenerObrasParaChatbot();
+        if (!Array.isArray(obras) || obras.length === 0) return;
+
+        const contenedorOpciones = document.createElement('div');
+        contenedorOpciones.className = 'chat-obras-opciones';
+
+        obras.forEach((obra) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'chat-obra-btn';
+            btn.textContent = obra.nombre || 'Obra';
+            btn.addEventListener('click', () => {
+                agregarMensaje(obra.nombre || 'Obra', 'user-message');
+                setTimeout(() => {
+                    agregarMensaje(formatearFichaObraChatbot(obra), 'bot-message');
+                }, 250);
+            });
+            contenedorOpciones.appendChild(btn);
+        });
+
+        chatMessages.appendChild(contenedorOpciones);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    async function procesarRespuestaBot(textoUsuario) {
+        const obras = await obtenerObrasParaChatbot();
+        const respuesta = responderChatbot(textoUsuario, obras);
+        agregarMensaje(respuesta.texto, 'bot-message');
+        if (respuesta.mostrarOpciones) {
+            await agregarBotonesObras();
+        }
+    }
+
+    chatBox.style.display = 'none';
+    chatToggleBtn.addEventListener('click', async () => {
+        const abrir = chatBox.style.display === 'none';
+        chatBox.style.display = abrir ? 'flex' : 'none';
+        if (abrir && !bienvenidaMostrada) {
+            bienvenidaMostrada = true;
+            agregarMensaje('¡Hola! Estas son las obras registradas. Presiona cualquiera para ver su información:', 'bot-message');
+            await agregarBotonesObras();
+        }
+    });
+
+    chatCloseBtn?.addEventListener('click', () => {
+        chatBox.style.display = 'none';
+    });
 
     function enviarMensaje() {
         const texto = chatInput.value.trim();
         if (!texto) return;
         agregarMensaje(texto, 'user-message');
         chatInput.value = '';
-        setTimeout(() => agregarMensaje(responderChatbot(texto), 'bot-message'), 600);
+        setTimeout(() => procesarRespuestaBot(texto), 450);
     }
 
     chatSendBtn?.addEventListener('click', enviarMensaje);
