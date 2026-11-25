@@ -234,8 +234,6 @@ async function cargarMarcadoresEnMapa(map) {
             const { lat, lng } = resolverCoordenadasObra(obra);
             const porcentajeVal = obtenerAvanceObra(obra);
             const colorPin = obtenerColorPorEstado(obra.estado, porcentajeVal);
-            const razonObra = String(obra.justificacion || obra.razon || '').trim();
-            const ejecucionObra = String(obra.ejecucion || '').trim();
 
             const iconoPinSvg = L.divIcon({
                 className: 'custom-pin',
@@ -258,8 +256,6 @@ async function cargarMarcadoresEnMapa(map) {
                     <p style="margin: 3px 0;"><strong>Presupuesto:</strong> $${Number(obra.presupuesto).toLocaleString()}</p>
                     <p style="margin: 3px 0;"><strong>Estado:</strong> ${escaparHTML(obra.estado)}</p>
                     <p style="margin: 3px 0;"><strong>Avance:</strong> ${porcentajeVal}%</p>
-                    ${razonObra ? `<p style="margin: 6px 0 0 0; padding-top: 5px; border-top: 1px solid #e2e8f0; font-size: 0.85rem; color: #334155;"><strong>Razón / Justificación:</strong> ${escaparHTML(razonObra)}</p>` : ''}
-                    ${ejecucionObra ? `<p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #334155;"><strong>Ejecución:</strong> ${escaparHTML(ejecucionObra)}</p>` : ''}
                 </div>
             `);
             marcadoresObras[obra.id] = marker;
