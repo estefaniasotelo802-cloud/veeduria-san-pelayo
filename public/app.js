@@ -32,7 +32,7 @@ const COORDENADAS_SECTORES_MAPA = {
     'brisas del sinú': [8.9635, -75.8430],
     'sabana nueva': [8.9780, -75.8175],
     'sabanueva': [8.9780, -75.8175],
-    'carrillo': [8.9410, -75.8360],
+    'carrillo': [8.9807900743012, -75.83407203473728],
     'las guamas': [8.9320, -75.8190],
     'bonga mella': [8.9850, -75.8520],
     'el oco': [8.9280, -75.8450],
