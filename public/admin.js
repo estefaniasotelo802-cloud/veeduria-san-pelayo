@@ -115,7 +115,7 @@ async function cargarObrasAdmin() {
 
         obras.forEach(obra => {
             const detalleCorto = resumirTextoCorto(
-                obra.justificacion || obra.ejecucion || obra.descripcion || obra.resumen || ''
+                obra.justificacion || obra.descripcion || obra.resumen || ''
             );
 
             const fila = document.createElement('tr');
@@ -221,9 +221,7 @@ window.prepararEdicion = function(obra) {
     document.getElementById('avance_porcentaje').value = obra.porcentaje ?? obra.avance_porcentaje ?? 0;
 
     const justificacionInput = document.getElementById('justificacion');
-    const ejecucionInput = document.getElementById('ejecucion');
     if (justificacionInput) justificacionInput.value = obra.justificacion || obra.descripcion || '';
-    if (ejecucionInput) ejecucionInput.value = obra.ejecucion || '';
 
     if (formTitle) formTitle.innerText = 'Actualizar Obra Registrada';
     if (btnSubmitForm) {
@@ -284,9 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const coords = await obtenerCoordenadasPorSector(sectorValor);
 
             const justificacionInput = document.getElementById('justificacion');
-            const ejecucionInput = document.getElementById('ejecucion');
             const justificacionValor = justificacionInput ? justificacionInput.value.trim() : '';
-            const ejecucionValor = ejecucionInput ? ejecucionInput.value.trim() : '';
 
             const datosObra = {
                 nombre: document.getElementById('nombre').value.trim(),
@@ -297,8 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 avance_porcentaje: avanceNum,
                 latitud: coords.latitud,
                 longitud: coords.longitud,
-                justificacion: justificacionValor,
-                ejecucion: ejecucionValor
+                justificacion: justificacionValor
             };
 
             try {
