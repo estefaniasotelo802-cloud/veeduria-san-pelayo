@@ -28,16 +28,18 @@ const COORDENADAS_SECTORES_MAPA = {
     'casco urbano': [8.9564, -75.8369],
     'sector urbano': [8.9564, -75.8369],
     'pelayito': [8.9465, -75.8240],
-    'brisas del sinu': [8.966104671651566, -75.83870356095689],
+    'brisas del sinu': [8.9635, -75.8430],
+    'brisas del sinú': [8.9635, -75.8430],
+    'sabana nueva': [8.9780, -75.8175],
     'sabanueva': [8.9780, -75.8175],
-    'carrillo': [8.9807900743012, -75.83407203473728],
+    'carrillo': [8.9410, -75.8360],
     'las guamas': [8.9320, -75.8190],
     'bonga mella': [8.9850, -75.8520],
     'el oco': [8.9280, -75.8450],
     'trementino': [8.9180, -75.8280],
     'valparaiso': [8.9690, -75.8540],
-    'cotorra': [9.0350, -75.7950],
-    'Casa del porro': [8.957421672036137, -75.83976871449568]
+    'valparaíso': [8.9690, -75.8540],
+    'cotorra': [9.0350, -75.7950]
 };
 
 function escaparHTML(texto) {
@@ -101,7 +103,7 @@ function resolverCoordenadasBaseObra(obra) {
     return { lat: 8.9564, lng: -75.8369 };
 }
 
-// Separa marcadores muy cercanos sin sacarlos del sector (evita desviarse hacia Carrillo)
+// Separa marcadores muy cercanos sin sacarlos del sector
 function aplicarOffsetSiCoinciden(obras) {
     const grupos = {};
     const resultado = [];
@@ -119,7 +121,7 @@ function aplicarOffsetSiCoinciden(obras) {
             return;
         }
 
-        const radio = 0.00012; // ~13 metros: separa lo justo sin salir del casco urbano
+        const radio = 0.00012; // ~13 metros
         items.forEach((item, idx) => {
             const angulo = (2 * Math.PI * idx) / items.length;
             resultado.push({
@@ -137,17 +139,18 @@ function aplicarOffsetSiCoinciden(obras) {
 
 function obtenerEstiloBadgeEstado(estado, porcentaje = 0) {
     const est = String(estado || '').toLowerCase();
-    const pct = Number(porcentaje) || 0;
+    const pct = Math.max(0, Math.min(100, Number(porcentaje) || 0));
+
     if (est.includes('mitigación') || est.includes('mitigacion') || est.includes('finaliz') || est.includes('complet')) {
-        return 'background-color: #dcfce7; color: #166534; border: 1px solid #86efac;';
+        return 'background-color: #dcfce7 !important; color: #166534 !important; border: 1px solid #86efac !important;';
     }
-    if (pct <= 30) {
-        return 'background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;';
+    if (est.includes('pendiente') || est.includes('planeación') || est.includes('planeacion') || pct <= 30) {
+        return 'background-color: #fee2e2 !important; color: #991b1b !important; border: 1px solid #fca5a5 !important;';
     }
-    if (est.includes('ejecución') || est.includes('ejecucion') || est.includes('proceso') || est.includes('pruebas')) {
-        return 'background-color: #fef9c3; color: #854d0e; border: 1px solid #fde047;';
+    if (pct <= 70) {
+        return 'background-color: #fef9c3 !important; color: #854d0e !important; border: 1px solid #fde047 !important;';
     }
-    return 'background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;';
+    return 'background-color: #dcfce7 !important; color: #166534 !important; border: 1px solid #86efac !important;';
 }
 
 function renderizarTablaObras(obras) {
@@ -185,8 +188,8 @@ function renderizarTablaObras(obras) {
             <td><span class="badge ${obtenerClaseEstado(obra.estado)}" style="${estiloBadge}">${escaparHTML(obra.estado)}</span></td>
             <td>
                 <div class="progress-bar-container">
-                    <div class="progress-bar" style="--progress-width: ${porcentajeNum}%; width: ${porcentajeNum}%; background-color: ${colorRango};"></div>
-                    <span style="color: ${colorRango}; font-weight: 700;">${porcentajeNum}%</span>
+                    <div class="progress-bar" style="--progress-width: ${porcentajeNum}%; width: ${porcentajeNum}% !important; background-color: ${colorRango} !important;"></div>
+                    <span style="color: ${colorRango} !important; font-weight: 700;">${porcentajeNum}%</span>
                 </div>
             </td>
         `;
@@ -1247,7 +1250,7 @@ function inicializarAccesibilidad() {
         document.documentElement.style.fontSize = `${accTamanoPx}px`;
     } else if (zoomGuardado >= 80 && zoomGuardado <= 140) {
         zoomTextoActual = zoomGuardado;
-        accTamanoPx = Math.round((16 * zoomTextoActual) / 100);
+        accTamanoPx = Math.round((16 * zoomGuardado) / 100);
         document.documentElement.style.fontSize = zoomTextoActual + '%';
     }
     actualizarEtiquetaPx();
