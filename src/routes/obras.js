@@ -70,8 +70,6 @@ function validarContenidoComentario(autor, mensaje) {
         presupuesto DECIMAL(15,2) DEFAULT 0,
         estado VARCHAR(100) DEFAULT 'En ejecución',
         avance_porcentaje INT DEFAULT 0,
-        fecha_inicio DATE DEFAULT NULL,
-        fecha_fin DATE DEFAULT NULL,
         latitud DECIMAL(10,8) DEFAULT 8.96500000,
         longitud DECIMAL(11,8) DEFAULT -75.84500000,
         justificacion TEXT DEFAULT NULL,
@@ -221,8 +219,6 @@ router.post('/', async (req, res) => {
     estado,
     avance,
     porcentaje,
-    fecha_inicio,
-    fecha_fin,
     latitud,
     longitud,
     justificacion,
@@ -230,8 +226,6 @@ router.post('/', async (req, res) => {
   } = req.body;
 
   const valorAvance = avance !== undefined && avance !== '' ? avance : (porcentaje !== undefined && porcentaje !== '' ? porcentaje : 0);
-  const fecInicio = fecha_inicio && fecha_inicio !== '' ? fecha_inicio : null;
-  const fecFin = fecha_fin && fecha_fin !== '' ? fecha_fin : null;
   const lat = latitud ? parseFloat(latitud) : 8.96500000;
   const lng = longitud ? parseFloat(longitud) : -75.84500000;
   const justTexto = justificacion && String(justificacion).trim() !== '' ? String(justificacion).trim() : null;
@@ -239,8 +233,8 @@ router.post('/', async (req, res) => {
 
   try {
     const [resultado] = await pool.query(
-      'INSERT INTO obras (nombre, sector, presupuesto, estado, avance_porcentaje, fecha_inicio, fecha_fin, latitud, longitud, justificacion, ejecucion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [nombre, sector, presupuesto, estado, valorAvance, fecInicio, fecFin, lat, lng, justTexto, ejecTexto]
+      'INSERT INTO obras (nombre, sector, presupuesto, estado, avance_porcentaje, latitud, longitud, justificacion, ejecucion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [nombre, sector, presupuesto, estado, valorAvance, lat, lng, justTexto, ejecTexto]
     );
     res.status(201).json({ mensaje: 'Obra registrada con éxito', id: resultado.insertId });
   } catch (error) {
@@ -258,8 +252,6 @@ router.put('/:id', async (req, res) => {
     estado,
     avance,
     porcentaje,
-    fecha_inicio,
-    fecha_fin,
     latitud,
     longitud,
     justificacion,
@@ -267,8 +259,6 @@ router.put('/:id', async (req, res) => {
   } = req.body;
 
   const valorAvance = avance !== undefined && avance !== '' ? avance : (porcentaje !== undefined && porcentaje !== '' ? porcentaje : 0);
-  const fecInicio = fecha_inicio && fecha_inicio !== '' ? fecha_inicio : null;
-  const fecFin = fecha_fin && fecha_fin !== '' ? fecha_fin : null;
   const justTexto = justificacion && String(justificacion).trim() !== '' ? String(justificacion).trim() : null;
   const ejecTexto = ejecucion && String(ejecucion).trim() !== '' ? String(ejecucion).trim() : null;
 
@@ -279,8 +269,6 @@ router.put('/:id', async (req, res) => {
       'presupuesto = ?',
       'estado = ?',
       'avance_porcentaje = ?',
-      'fecha_inicio = ?',
-      'fecha_fin = ?',
       'justificacion = ?',
       'ejecucion = ?'
     ];
@@ -290,8 +278,6 @@ router.put('/:id', async (req, res) => {
       presupuesto,
       estado,
       valorAvance,
-      fecInicio,
-      fecFin,
       justTexto,
       ejecTexto
     ];

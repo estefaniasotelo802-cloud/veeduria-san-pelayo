@@ -110,7 +110,7 @@ function renderizarTablaObras(obras) {
     tablaBody.innerHTML = '';
 
     if (!Array.isArray(obras) || obras.length === 0) {
-        tablaBody.innerHTML = `<tr><td colspan="7" style="text-align: center;">No hay obras registradas actualmente.</td></tr>`;
+        tablaBody.innerHTML = `<tr><td colspan="5" style="text-align: center;">No hay obras registradas actualmente.</td></tr>`;
         return;
     }
 
@@ -121,8 +121,6 @@ function renderizarTablaObras(obras) {
         fila.style.cursor = 'pointer';
 
         const porcentajeNum = Math.max(0, Math.min(100, Number(obtenerAvanceObra(obra)) || 0));
-        const fechaInicio = obra.fecha_inicio ? new Date(obra.fecha_inicio).toLocaleDateString() : 'N/D';
-        const fechaFin = obra.fecha_fin ? new Date(obra.fecha_fin).toLocaleDateString() : 'N/D';
         const resumenObra = resumirTextoObraPublica(obtenerDescripcionObra(obra));
 
         fila.innerHTML = `
@@ -142,8 +140,6 @@ function renderizarTablaObras(obras) {
                     <span>${porcentajeNum}%</span>
                 </div>
             </td>
-            <td style="color: #475569; font-size: 0.9rem;">${fechaInicio}</td>
-            <td style="color: #475569; font-size: 0.9rem;">${fechaFin}</td>
         `;
 
         fila.addEventListener('click', () => {
@@ -160,7 +156,7 @@ function renderizarTablaObras(obras) {
     if (obras.length > LIMITE_INICIAL_OBRAS) {
         const filaControl = document.createElement('tr');
         filaControl.innerHTML = `
-            <td colspan="7" style="text-align: center; background: transparent; border: none; padding-top: 10px;">
+            <td colspan="5" style="text-align: center; background: transparent; border: none; padding-top: 10px;">
                 <button type="button" id="btnToggleTodasObras" class="btn-ver-mas-obras">
                     ${mostrarTodasObras ? 'Ver menos obras' : `Ver todas las obras (${obras.length})`}
                 </button>
@@ -188,7 +184,7 @@ async function obtenerObrasPublicas() {
         console.error('Error:', error);
         const tablaBody = document.getElementById('tablaObrasBody');
         if (tablaBody) {
-            tablaBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: red;">Error al cargar la información. Intente más tarde.</td></tr>`;
+            tablaBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red;">Error al cargar la información. Intente más tarde.</td></tr>`;
         }
     }
 }
@@ -825,8 +821,6 @@ function obtenerCirculitoObra(obra, index) {
 function formatearFichaObraChatbot(obra) {
     const avance = Math.max(0, Math.min(100, Number(obtenerAvanceObra(obra)) || 0));
     const presupuesto = Number(obra.presupuesto || 0).toLocaleString();
-    const fechaInicio = obra.fecha_inicio ? new Date(obra.fecha_inicio).toLocaleDateString() : 'N/D';
-    const fechaFin = obra.fecha_fin ? new Date(obra.fecha_fin).toLocaleDateString() : 'N/D';
     const justificacion = String(obra.justificacion || obra.razon || obra.descripcion || '').trim();
     const ejecucion = String(obra.ejecucion || '').trim();
 
@@ -835,8 +829,7 @@ function formatearFichaObraChatbot(obra) {
         `• Sector: ${obra.sector || 'No especificado'}`,
         `• Presupuesto: $${presupuesto}`,
         `• Estado: ${obra.estado || 'Pendiente'}`,
-        `• Avance: ${avance}%`,
-        `• Fechas: ${fechaInicio} al ${fechaFin}`
+        `• Avance: ${avance}%`
     ];
 
     if (justificacion) lineas.push(`• En qué consiste / Razón: ${justificacion}`);

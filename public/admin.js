@@ -219,8 +219,6 @@ window.prepararEdicion = function(obra) {
     document.getElementById('presupuesto').value = obra.presupuesto || '';
     document.getElementById('estado').value = obra.estado || 'En ejecución';
     document.getElementById('avance_porcentaje').value = obra.porcentaje ?? obra.avance_porcentaje ?? 0;
-    document.getElementById('fecha_inicio').value = obra.fecha_inicio ? obra.fecha_inicio.split('T')[0] : '';
-    document.getElementById('fecha_fin').value = obra.fecha_fin ? obra.fecha_fin.split('T')[0] : '';
 
     const justificacionInput = document.getElementById('justificacion');
     const ejecucionInput = document.getElementById('ejecucion');
@@ -297,8 +295,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 estado: document.getElementById('estado').value,
                 porcentaje: avanceNum,
                 avance_porcentaje: avanceNum,
-                fecha_inicio: document.getElementById('fecha_inicio').value || null,
-                fecha_fin: document.getElementById('fecha_fin').value || null,
                 latitud: coords.latitud,
                 longitud: coords.longitud,
                 justificacion: justificacionValor,
