@@ -144,10 +144,14 @@ function aplicarOffsetSiCoinciden(obras) {
 
 // 1. GESTIÓN DE LA TABLA PÚBLICA
 
-function obtenerEstiloBadgeEstado(estado) {
+function obtenerEstiloBadgeEstado(estado, porcentaje = 0) {
     const est = String(estado || '').toLowerCase();
+    const pct = Number(porcentaje) || 0;
     if (est.includes('mitigación') || est.includes('mitigacion') || est.includes('finaliz') || est.includes('complet')) {
         return 'background-color: #dcfce7; color: #166534; border: 1px solid #86efac;';
+    }
+    if (pct <= 30) {
+        return 'background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;';
     }
     if (est.includes('ejecución') || est.includes('ejecucion') || est.includes('proceso') || est.includes('pruebas')) {
         return 'background-color: #fef9c3; color: #854d0e; border: 1px solid #fde047;';
@@ -175,7 +179,7 @@ function renderizarTablaObras(obras) {
         const porcentajeNum = Math.max(0, Math.min(100, Number(obtenerAvanceObra(obra)) || 0));
         const resumenObra = resumirTextoObraPublica(obtenerDescripcionObra(obra));
         const colorRango = obtenerColorPorcentajeAvance(porcentajeNum);
-        const estiloBadge = obtenerEstiloBadgeEstado(obra.estado);
+        const estiloBadge = obtenerEstiloBadgeEstado(obra.estado, porcentajeNum);
 
         fila.innerHTML = `
             <td>
