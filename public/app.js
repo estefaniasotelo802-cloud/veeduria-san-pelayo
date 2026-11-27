@@ -82,14 +82,6 @@ function obtenerColorPorcentajeAvance(porcentaje) {
 function resolverCoordenadasBaseObra(obra) {
     const latNum = parseFloat(obra.latitud);
     const lngNum = parseFloat(obra.longitud);
-    const esPuntoPorDefecto =
-        Number.isNaN(latNum) ||
-        Number.isNaN(lngNum) ||
-        (Math.abs(latNum - 8.9564) < 0.0001 && Math.abs(lngNum + 75.8369) < 0.0001);
-
-    if (!esPuntoPorDefecto) {
-        return { lat: latNum, lng: lngNum };
-    }
 
     const sectorNorm = String(obra.sector || '')
         .toLowerCase()
@@ -104,20 +96,21 @@ function resolverCoordenadasBaseObra(obra) {
         }
     }
 
-    return {
-        lat: Number.isNaN(latNum) ? 8.9564 : latNum,
-        lng: Number.isNaN(lngNum) ? -75.8369 : lngNum
-    };
+    if (!Number.isNaN(latNum) && !Number.isNaN(lngNum)) {
+        return { lat: latNum, lng: lngNum };
+    }
+
+    return { lat: 8.9564, lng: -75.8369 };
 }
 
-// Separa ligeramente marcadores que comparten exactamente la misma ubicación
+// Separa marcadores muy cercanos sin sacarlos del sector (evita desviarse hacia Carrillo)
 function aplicarOffsetSiCoinciden(obras) {
     const grupos = {};
     const resultado = [];
 
     obras.forEach((obra) => {
         const base = resolverCoordenadasBaseObra(obra);
-        const clave = `${base.lat.toFixed(4)},${base.lng.toFixed(4)}`;
+        const clave = `${base.lat.toFixed(3)},${base.lng.toFixed(3)}`;
         if (!grupos[clave]) grupos[clave] = [];
         grupos[clave].push({ obra, base });
     });
@@ -128,7 +121,7 @@ function aplicarOffsetSiCoinciden(obras) {
             return;
         }
 
-        const radio = 0.00028; // ~30 metros para que ambos pines sean visibles y clicables
+        const radio = 0.00012; // ~13 metros: separa lo justo sin salir del casco urbano
         items.forEach((item, idx) => {
             const angulo = (2 * Math.PI * idx) / items.length;
             resultado.push({
@@ -214,8 +207,13 @@ function renderizarTablaObras(obras) {
     if (obras.length > LIMITE_INICIAL_OBRAS) {
         const filaControl = document.createElement('tr');
         filaControl.innerHTML = `
-            <td colspan="5" style="text-align: center; background: transparent; border: none; padding-top: 10px;">
-                <button type="button" id="btnToggleTodasObras" class="btn-ver-mas-obras">
+            <td colspan="5" style="text-align: center; background: transparent; border: none; padding-top: 14px;">
+                <button
+                    type="button"
+                    id="btnToggleTodasObras"
+                    class="btn-ver-mas-obras"
+                    style="background: linear-gradient(135deg, #034b7b, #0284c7); color: #ffffff; border: none; border-radius: 8px; padding: 9px 22px; font-size: 0.88rem; font-weight: 600; cursor: pointer; box-shadow: 0 2px 6px rgba(3, 75, 123, 0.22); width: auto; display: inline-block;"
+                >
                     ${mostrarTodasObras ? 'Ver menos obras' : `Ver todas las obras (${obras.length})`}
                 </button>
             </td>
