@@ -36,7 +36,8 @@ const COORDENADAS_SECTORES_MAPA = {
     'el oco': [8.9280, -75.8450],
     'trementino': [8.9180, -75.8280],
     'valparaiso': [8.9690, -75.8540],
-    'cotorra': [9.0350, -75.7950]
+    'cotorra': [9.0350, -75.7950],
+    'Casa del porro': [8.957421672036137, -75.83976871449568]
 };
 
 function escaparHTML(texto) {
