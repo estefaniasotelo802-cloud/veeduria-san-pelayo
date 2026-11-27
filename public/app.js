@@ -28,9 +28,7 @@ const COORDENADAS_SECTORES_MAPA = {
     'casco urbano': [8.9564, -75.8369],
     'sector urbano': [8.9564, -75.8369],
     'pelayito': [8.9465, -75.8240],
-    'brisas del sinu': [8.9635, -75.8430],
-    'brisas del sinú': [8.9635, -75.8430],
-    'sabana nueva': [8.9780, -75.8175],
+    'brisas del sinu': [8.966104671651566, -75.83870356095689],
     'sabanueva': [8.9780, -75.8175],
     'carrillo': [8.9807900743012, -75.83407203473728],
     'las guamas': [8.9320, -75.8190],
@@ -38,7 +36,6 @@ const COORDENADAS_SECTORES_MAPA = {
     'el oco': [8.9280, -75.8450],
     'trementino': [8.9180, -75.8280],
     'valparaiso': [8.9690, -75.8540],
-    'valparaíso': [8.9690, -75.8540],
     'cotorra': [9.0350, -75.7950]
 };
 
