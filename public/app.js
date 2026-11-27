@@ -25,10 +25,13 @@ const LIMITE_INICIAL_OBRAS = 4;
 const COORDENADAS_SECTORES_MAPA = {
     'san pelayo': [8.9564, -75.8369],
     'centro': [8.9564, -75.8369],
+    'casco urbano': [8.9564, -75.8369],
+    'sector urbano': [8.9564, -75.8369],
     'pelayito': [8.9465, -75.8240],
     'brisas del sinu': [8.9635, -75.8430],
     'brisas del sinú': [8.9635, -75.8430],
     'sabana nueva': [8.9780, -75.8175],
+    'sabanueva': [8.9780, -75.8175],
     'carrillo': [8.9410, -75.8360],
     'las guamas': [8.9320, -75.8190],
     'bonga mella': [8.9850, -75.8520],
@@ -68,7 +71,15 @@ function resumirTextoObraPublica(texto) {
     return String(texto || '').trim();
 }
 
-function resolverCoordenadasObra(obra) {
+// Rangos de avance: 0-30% rojo, 31-70% amarillo, 71-100% verde
+function obtenerColorPorcentajeAvance(porcentaje) {
+    const pct = Math.max(0, Math.min(100, Number(porcentaje) || 0));
+    if (pct <= 30) return '#e74c3c';
+    if (pct <= 70) return '#f39c12';
+    return '#2ecc71';
+}
+
+function resolverCoordenadasBaseObra(obra) {
     const latNum = parseFloat(obra.latitud);
     const lngNum = parseFloat(obra.longitud);
     const esPuntoPorDefecto =
@@ -99,7 +110,50 @@ function resolverCoordenadasObra(obra) {
     };
 }
 
+// Separa ligeramente marcadores que comparten exactamente la misma ubicación
+function aplicarOffsetSiCoinciden(obras) {
+    const grupos = {};
+    const resultado = [];
+
+    obras.forEach((obra) => {
+        const base = resolverCoordenadasBaseObra(obra);
+        const clave = `${base.lat.toFixed(4)},${base.lng.toFixed(4)}`;
+        if (!grupos[clave]) grupos[clave] = [];
+        grupos[clave].push({ obra, base });
+    });
+
+    Object.values(grupos).forEach((items) => {
+        if (items.length === 1) {
+            resultado.push({ obra: items[0].obra, lat: items[0].base.lat, lng: items[0].base.lng });
+            return;
+        }
+
+        const radio = 0.00028; // ~30 metros para que ambos pines sean visibles y clicables
+        items.forEach((item, idx) => {
+            const angulo = (2 * Math.PI * idx) / items.length;
+            resultado.push({
+                obra: item.obra,
+                lat: item.base.lat + radio * Math.cos(angulo),
+                lng: item.base.lng + radio * Math.sin(angulo)
+            });
+        });
+    });
+
+    return resultado;
+}
+
 // 1. GESTIÓN DE LA TABLA PÚBLICA
+
+function obtenerEstiloBadgeEstado(estado) {
+    const est = String(estado || '').toLowerCase();
+    if (est.includes('mitigación') || est.includes('mitigacion') || est.includes('finaliz') || est.includes('complet')) {
+        return 'background-color: #dcfce7; color: #166534; border: 1px solid #86efac;';
+    }
+    if (est.includes('ejecución') || est.includes('ejecucion') || est.includes('proceso') || est.includes('pruebas')) {
+        return 'background-color: #fef9c3; color: #854d0e; border: 1px solid #fde047;';
+    }
+    return 'background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;';
+}
 
 function renderizarTablaObras(obras) {
     const tablaBody = document.getElementById('tablaObrasBody');
@@ -120,6 +174,8 @@ function renderizarTablaObras(obras) {
 
         const porcentajeNum = Math.max(0, Math.min(100, Number(obtenerAvanceObra(obra)) || 0));
         const resumenObra = resumirTextoObraPublica(obtenerDescripcionObra(obra));
+        const colorRango = obtenerColorPorcentajeAvance(porcentajeNum);
+        const estiloBadge = obtenerEstiloBadgeEstado(obra.estado);
 
         fila.innerHTML = `
             <td>
@@ -131,11 +187,11 @@ function renderizarTablaObras(obras) {
             </td>
             <td>${escaparHTML(obra.sector)}</td>
             <td>$${Number(obra.presupuesto).toLocaleString()}</td>
-            <td><span class="badge ${obtenerClaseEstado(obra.estado)}">${escaparHTML(obra.estado)}</span></td>
+            <td><span class="badge ${obtenerClaseEstado(obra.estado)}" style="${estiloBadge}">${escaparHTML(obra.estado)}</span></td>
             <td>
                 <div class="progress-bar-container">
-                    <div class="progress-bar" style="--progress-width: ${porcentajeNum}%; width: ${porcentajeNum}%;"></div>
-                    <span>${porcentajeNum}%</span>
+                    <div class="progress-bar" style="--progress-width: ${porcentajeNum}%; width: ${porcentajeNum}%; background-color: ${colorRango};"></div>
+                    <span style="color: ${colorRango}; font-weight: 700;">${porcentajeNum}%</span>
                 </div>
             </td>
         `;
@@ -188,10 +244,14 @@ async function obtenerObrasPublicas() {
 }
 
 function obtenerClaseEstado(estado) {
-    if (!estado) return '';
+    if (!estado) return 'estado-pendiente';
     const est = estado.toLowerCase();
-    if (est.includes('completado') || est.includes('finalizado')) return 'estado-completado';
-    if (est.includes('proceso') || est.includes('ejecución')) return 'estado-proceso';
+    if (est.includes('completado') || est.includes('finalizado') || est.includes('finalizada') || est.includes('mitigación') || est.includes('mitigacion')) {
+        return 'estado-completado';
+    }
+    if (est.includes('proceso') || est.includes('ejecución') || est.includes('ejecucion') || est.includes('pruebas')) {
+        return 'estado-proceso';
+    }
     return 'estado-pendiente';
 }
 
@@ -212,9 +272,7 @@ function inicializarMapa() {
 }
 
 function obtenerColorPorEstado(estado, porcentaje) {
-    if (porcentaje >= 100 || (estado && estado.toLowerCase().includes('completado'))) return '#2ecc71';
-    if (estado && (estado.toLowerCase().includes('proceso') || estado.toLowerCase().includes('ejecución'))) return '#f39c12';
-    return '#e74c3c';
+    return obtenerColorPorcentajeAvance(porcentaje);
 }
 
 async function cargarMarcadoresEnMapa(map) {
@@ -224,8 +282,9 @@ async function cargarMarcadoresEnMapa(map) {
 
         Object.values(marcadoresObras).forEach(m => map.removeLayer(m));
 
-        obras.forEach(obra => {
-            const { lat, lng } = resolverCoordenadasObra(obra);
+        const obrasConPosicion = aplicarOffsetSiCoinciden(Array.isArray(obras) ? obras : []);
+
+        obrasConPosicion.forEach(({ obra, lat, lng }) => {
             const porcentajeVal = obtenerAvanceObra(obra);
             const colorPin = obtenerColorPorEstado(obra.estado, porcentajeVal);
 
