@@ -25,6 +25,21 @@ function normalizarTextoSector(texto) {
         .trim();
 }
 
+function parsearPresupuestoMiles(valor) {
+    if (typeof valor === 'number') {
+        return Number.isFinite(valor) ? valor : NaN;
+    }
+    const limpio = String(valor ?? '')
+        .trim()
+        .replace(/\$/g, '')
+        .replace(/\s+/g, '')
+        .replace(/\./g, '')
+        .replace(/,/g, '.');
+    if (!limpio) return NaN;
+    const num = Number(limpio);
+    return Number.isFinite(num) ? num : NaN;
+}
+
 async function obtenerCoordenadasPorSector(sectorTexto) {
     const limpio = normalizarTextoSector(sectorTexto);
     if (!limpio) {
@@ -115,7 +130,7 @@ async function cargarObrasAdmin() {
 
         obras.forEach(obra => {
             const detalleCorto = resumirTextoCorto(
-                obra.justificacion || obra.descripcion || obra.resumen || ''
+                obra.justificacion || obra.ejecucion || obra.descripcion || obra.resumen || ''
             );
 
             const fila = document.createElement('tr');
@@ -216,12 +231,17 @@ window.prepararEdicion = function(obra) {
     if (obraIdInput) obraIdInput.value = obra.id;
     document.getElementById('nombre').value = obra.nombre || '';
     document.getElementById('sector').value = obra.sector || '';
-    document.getElementById('presupuesto').value = obra.presupuesto || '';
+    const presupuestoParsed = parsearPresupuestoMiles(obra.presupuesto);
+    document.getElementById('presupuesto').value = Number.isFinite(presupuestoParsed)
+        ? presupuestoParsed.toLocaleString('es-CO')
+        : (obra.presupuesto || '');
     document.getElementById('estado').value = obra.estado || 'En ejecución';
     document.getElementById('avance_porcentaje').value = obra.porcentaje ?? obra.avance_porcentaje ?? 0;
 
     const justificacionInput = document.getElementById('justificacion');
+    const ejecucionInput = document.getElementById('ejecucion');
     if (justificacionInput) justificacionInput.value = obra.justificacion || obra.descripcion || '';
+    if (ejecucionInput) ejecucionInput.value = obra.ejecucion || '';
 
     if (formTitle) formTitle.innerText = 'Actualizar Obra Registrada';
     if (btnSubmitForm) {
@@ -277,23 +297,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const id = obraIdInput ? obraIdInput.value.trim() : '';
             const sectorValor = document.getElementById('sector').value.trim();
-            const presupuestoLimpio = document.getElementById('presupuesto').value.replace(/[^\d.-]/g, '').trim();
+            const presupuestoNum = parsearPresupuestoMiles(document.getElementById('presupuesto').value);
+            if (!Number.isFinite(presupuestoNum) || presupuestoNum < 0) {
+                alert('Ingresa un presupuesto válido (puedes usar puntos de miles, ej. 5.800.000.000).');
+                return;
+            }
+
             const avanceNum = Number(document.getElementById('avance_porcentaje').value) || 0;
             const coords = await obtenerCoordenadasPorSector(sectorValor);
 
             const justificacionInput = document.getElementById('justificacion');
+            const ejecucionInput = document.getElementById('ejecucion');
             const justificacionValor = justificacionInput ? justificacionInput.value.trim() : '';
+            const ejecucionValor = ejecucionInput ? ejecucionInput.value.trim() : '';
 
             const datosObra = {
                 nombre: document.getElementById('nombre').value.trim(),
                 sector: sectorValor,
-                presupuesto: presupuestoLimpio,
+                presupuesto: presupuestoNum,
                 estado: document.getElementById('estado').value,
                 porcentaje: avanceNum,
                 avance_porcentaje: avanceNum,
                 latitud: coords.latitud,
                 longitud: coords.longitud,
-                justificacion: justificacionValor
+                justificacion: justificacionValor,
+                ejecucion: ejecucionValor
             };
 
             try {

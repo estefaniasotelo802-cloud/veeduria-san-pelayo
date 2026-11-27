@@ -17,6 +17,20 @@ const administradoresAutorizados = [
   { cedula: '7350284', passwordPlana: 'val6790' }
 ];
 
+function normalizarPresupuesto(valor) {
+  if (typeof valor === 'number') {
+    return Number.isFinite(valor) ? valor : 0;
+  }
+  const limpio = String(valor ?? '')
+    .trim()
+    .replace(/\$/g, '')
+    .replace(/\s+/g, '')
+    .replace(/\./g, '')
+    .replace(/,/g, '.');
+  const num = Number(limpio);
+  return Number.isFinite(num) ? num : 0;
+}
+
 // Filtro automático en servidor para evitar mensajes inadecuados o spam
 function validarContenidoComentario(autor, mensaje) {
   const autorLimpio = (autor || 'Anónimo').trim();
@@ -72,7 +86,8 @@ function validarContenidoComentario(autor, mensaje) {
         avance_porcentaje INT DEFAULT 0,
         latitud DECIMAL(10,8) DEFAULT 8.96500000,
         longitud DECIMAL(11,8) DEFAULT -75.84500000,
-        justificacion TEXT DEFAULT NULL
+        justificacion TEXT DEFAULT NULL,
+        ejecucion TEXT DEFAULT NULL
       )
     `);
 
@@ -101,6 +116,7 @@ function validarContenidoComentario(autor, mensaje) {
 
     const columnasFaltantes = [
       "ALTER TABLE obras ADD COLUMN justificacion TEXT DEFAULT NULL",
+      "ALTER TABLE obras ADD COLUMN ejecucion TEXT DEFAULT NULL",
       "ALTER TABLE comentarios ADD COLUMN ciudadano VARCHAR(255) DEFAULT 'Anónimo'",
       "ALTER TABLE comentarios ADD COLUMN comentario TEXT",
       "ALTER TABLE comentarios ADD COLUMN obra_id INT DEFAULT NULL",
@@ -219,18 +235,21 @@ router.post('/', async (req, res) => {
     porcentaje,
     latitud,
     longitud,
-    justificacion
+    justificacion,
+    ejecucion
   } = req.body;
 
+  const presupuestoLimpio = normalizarPresupuesto(presupuesto);
   const valorAvance = avance !== undefined && avance !== '' ? avance : (porcentaje !== undefined && porcentaje !== '' ? porcentaje : 0);
   const lat = latitud ? parseFloat(latitud) : 8.96500000;
   const lng = longitud ? parseFloat(longitud) : -75.84500000;
   const justTexto = justificacion && String(justificacion).trim() !== '' ? String(justificacion).trim() : null;
+  const ejecTexto = ejecucion && String(ejecucion).trim() !== '' ? String(ejecucion).trim() : null;
 
   try {
     const [resultado] = await pool.query(
-      'INSERT INTO obras (nombre, sector, presupuesto, estado, avance_porcentaje, latitud, longitud, justificacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [nombre, sector, presupuesto, estado, valorAvance, lat, lng, justTexto]
+      'INSERT INTO obras (nombre, sector, presupuesto, estado, avance_porcentaje, latitud, longitud, justificacion, ejecucion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [nombre, sector, presupuestoLimpio, estado, valorAvance, lat, lng, justTexto, ejecTexto]
     );
     res.status(201).json({ mensaje: 'Obra registrada con éxito', id: resultado.insertId });
   } catch (error) {
@@ -250,11 +269,14 @@ router.put('/:id', async (req, res) => {
     porcentaje,
     latitud,
     longitud,
-    justificacion
+    justificacion,
+    ejecucion
   } = req.body;
 
+  const presupuestoLimpio = normalizarPresupuesto(presupuesto);
   const valorAvance = avance !== undefined && avance !== '' ? avance : (porcentaje !== undefined && porcentaje !== '' ? porcentaje : 0);
   const justTexto = justificacion && String(justificacion).trim() !== '' ? String(justificacion).trim() : null;
+  const ejecTexto = ejecucion && String(ejecucion).trim() !== '' ? String(ejecucion).trim() : null;
 
   try {
     const camposUpdate = [
@@ -263,15 +285,17 @@ router.put('/:id', async (req, res) => {
       'presupuesto = ?',
       'estado = ?',
       'avance_porcentaje = ?',
-      'justificacion = ?'
+      'justificacion = ?',
+      'ejecucion = ?'
     ];
     const valoresUpdate = [
       nombre,
       sector,
-      presupuesto,
+      presupuestoLimpio,
       estado,
       valorAvance,
-      justTexto
+      justTexto,
+      ejecTexto
     ];
 
     if (latitud !== undefined && latitud !== null && !Number.isNaN(parseFloat(latitud))) {

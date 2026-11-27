@@ -57,16 +57,15 @@ function obtenerDescripcionObra(obra) {
     return String(
         obra.justificacion ||
         obra.razon ||
+        obra.ejecucion ||
         obra.descripcion ||
         obra.resumen ||
         ''
     ).trim();
 }
 
-function resumirTextoObraPublica(texto, limite = 95) {
-    const limpio = String(texto || '').trim();
-    if (!limpio) return '';
-    return limpio.length > limite ? `${limpio.slice(0, limite).trim()}...` : limpio;
+function resumirTextoObraPublica(texto) {
+    return String(texto || '').trim();
 }
 
 function resolverCoordenadasObra(obra) {
@@ -821,6 +820,7 @@ function formatearFichaObraChatbot(obra) {
     const avance = Math.max(0, Math.min(100, Number(obtenerAvanceObra(obra)) || 0));
     const presupuesto = Number(obra.presupuesto || 0).toLocaleString();
     const justificacion = String(obra.justificacion || obra.razon || obra.descripcion || '').trim();
+    const ejecucion = String(obra.ejecucion || '').trim();
 
     const lineas = [
         `Información de "${obra.nombre || 'Obra sin nombre'}":`,
@@ -831,6 +831,7 @@ function formatearFichaObraChatbot(obra) {
     ];
 
     if (justificacion) lineas.push(`• En qué consiste / Razón: ${justificacion}`);
+    if (ejecucion) lineas.push(`• Cómo se ejecuta: ${ejecucion}`);
 
     return lineas.join('\n');
 }
@@ -934,7 +935,7 @@ function responderChatbot(texto, obrasDisponibles = []) {
     if (/(pavimentacion|pavimentación|guamas|carrillo|vial)/.test(lower)) {
         return {
             tipo: 'texto',
-            contenido: 'La Pavimentación del Corredor Vial Carrillo - Las Guamas tiene un presupuesto de $10,000,000,000 y presenta un 50% de avance.'
+            contenido: 'La Pavimentación del Corredor Vial Carrillo - Las Guamas tiene un presupuesto de $10,000,000,000 y presenta un 50% de avance en ejecución.'
         };
     }
 
